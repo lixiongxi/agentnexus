@@ -1,0 +1,48 @@
+# ============================================================
+# AgentNexus 一键部署（生产基线）
+#
+#   首次启动：
+#     cp server/.env.example server/.env
+#     # 编辑 .env：替换 ADMIN_TOKEN / SESSION_SECRET 为 `openssl rand -hex 32`
+#     #           设置 CORS_ORIGIN 为前端实际域名（生产自检拒绝 *）
+#     docker compose up -d --build
+#     docker compose exec server npx tsx prisma/seed.ts   # 可选：写入示范 Agent
+#
+#   访问：http://<host>/        （前端 80 端口，API 经 Nginx 同源代理）
+# ============================================================
+
+services:
+  server:
+    build: ./server
+    container_name: agenthub-server
+    restart: unless-stopped
+    env_file: ./server/.env
+    environment:
+      # SQLite 放到持久卷；容器内 NODE_ENV 由 .env 提供，此处覆盖为生产
+      NODE_ENV: production
+      DATABASE_URL: "file:/data/agenthub.db"
+      # Nginx 一层代理，限流需要识别真实客户端 IP
+      TRUST_PROXY: "1"
+    volumes:
+      - server-data:/data
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  web:
+    build: ./web
+    container_name: agenthub-web
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "80:80"
+
+volumes:
+  server-data:

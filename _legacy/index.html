@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentNexus · Agent 互联平台</title>
+<script>
+/* 主题预置：在样式生效前应用，避免深色模式闪白（FOUC） */
+(function(){
+  try{
+    var t = localStorage.getItem('agenthub_theme');
+    var dark = t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    if(dark) document.documentElement.setAttribute('data-theme','dark');
+  }catch(e){}
+})();
+</script>
+<style>
+/* ================================================================
+   AgentNexus · 设计系统 v2 (Design Tokens)
+   分层：基础令牌 → 主题 → 重置 → 布局 → 组件 → 页面 → 响应式
+   兼容：保留 v1 全部类名，仅增强；新增令牌与暗色主题
+   ================================================================ */
+
+/* ===================== 1. 设计令牌 ===================== */
+:root{
+  /* —— 中性色阶（12 级语义化） —— */
+  --bg:#F5F7FB;           /* 应用底色 */
+  --surface:#FFFFFF;      /* 卡片/面板 */
+  --surface-2:#FAFBFE;    /* 次级面（表头/输入底） */
+  --surface-3:#F1F4FA;    /* 三级面（hover） */
+  --line:#E8ECF5;         /* 分隔线 */
+  --line-2:#DCE2F0;       /* 强调分隔线 */
+
+  /* —— 文字（对比度经 WCAG AA 校验） —— */
+  --ink:#141A26;          /* 主文  15.8:1 on #FFF */
+  --ink-2:#4A5568;        /* 次级文 7.5:1  on #FFF */
+  --ink-3:#6B7488;        /* 辅助文 4.9:1  on #FFF ✅AA（原 #8B94A8 仅 3.4:1 ❌） */
+  --ink-4:#98A1B5;        /* 弱化/禁用 */
+
+  /* —— 品牌 —— */
+  --brand:#4F6BFF;
+  --brand-2:#7C5CFF;
+  --brand-hover:#3D59F0;
+  --brand-active:#3350E0;
+  --brand-soft:#EEF1FF;
+  --brand-ring:rgba(79,107,255,.30);
+  --grad-brand:linear-gradient(135deg,#4F6BFF 0%,#7C5CFF 100%);
+
+  /* —— 语义色 —— */
+  --green:#0E9F6E;   --green-soft:#E6F7EF;
+  --amber:#D97706;   --amber-soft:#FEF3E2;
+  --red:#E02424;     --red-soft:#FDECEC;
+  --cyan:#0E9DBD;    --cyan-soft:#E5F6FA;
+
+  /* —— 间距（4pt 基准） —— */
+  --sp-1:4px;  --sp-2:8px;  --sp-3:12px; --sp-4:16px;
+  --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px;
+
+  /* —— 圆角 —— */
+  --r-xs:6px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --r-full:999px;
+
+  /* —— 阴影（分层 elevation） —— */
+  --elev-0:none;
+  --elev-1:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+  --elev-2:0 4px 14px rgba(16,24,40,.07);
+  --elev-3:0 12px 32px rgba(16,24,40,.12);
+  --elev-4:0 24px 60px rgba(16,24,40,.18);
+
+  /* —— 动效 —— */
+  --ease:cubic-bezier(.4,0,.2,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-1:140ms; --dur-2:220ms; --dur-3:340ms;
+
+  /* —— 字号 —— */
+  --fs-xs:11px; --fs-sm:12px; --fs-base:13.5px; --fs-md:14px;
+  --fs-lg:16px; --fs-xl:18px; --fs-2xl:22px; --fs-3xl:26px;
+  --lh-tight:1.35; --lh-base:1.6;
+
+  /* —— 尺寸 —— */
+  --sidebar-w:236px;
+  --topbar-h:60px;
+  --container:1120px;
+
+  --mono:'SFMono-Regular',Consolas,'Courier New',monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+}
+
+/* ===================== 2. 暗色主题 ===================== */
+[data-theme="dark"]{
+  --bg:#0E1320;
+  --surface:#161C2B;
+  --surface-2:#1B2233;
+  --surface-3:#222B3F;
+  --line:#263149;
+  --line-2:#313D58;
+  --ink:#EDF1F8;
+  --ink-2:#AAB5C9;
+  --ink-3:#8B97B0;
+  --ink-4:#6B7689;
+  --brand:#6B85FF;
+  --brand-2:#9B7BFF;
+  --brand-hover:#5A75F5;
+  --brand-active:#4A66E8;
+  --brand-soft:#1E2A55;
+  --brand-ring:rgba(107,133,255,.38);
+  --green:#34D399;  --green-soft:#10312A;
+  --amber:#FBBF24;  --amber-soft:#33240A;
+  --red:#F87171;    --red-soft:#331919;
+  --cyan:#38BDF8;   --cyan-soft:#0C2A33;
+  --elev-1:0 1px 2px rgba(0,0,0,.30);
+  --elev-2:0 4px 14px rgba(0,0,0,.36);
+  --elev-3:0 12px 32px rgba(0,0,0,.46);
+  --elev-4:0 24px 60px rgba(0,0,0,.56);
+}
+
+/* ===================== 3. 基础重置 ===================== */
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--ink);
+  font-size:var(--fs-base);
+  line-height:var(--lh-base);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  transition:background var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+input,select,textarea{
+  font-family:inherit;font-size:var(--fs-sm);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r-md);
+  padding:9px 12px;background:var(--surface);outline:none;
+  transition:border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--brand);
+  box-shadow:0 0 0 3px var(--brand-ring);
+}
+::placeholder{color:var(--ink-4)}
+img,svg{display:block;max-width:100%}
+
+/* —— 统一焦点环（键盘可达，鼠标不显） —— */
+:focus{outline:none}
+:focus-visible{
+  outline:2px solid var(--brand);
+  outline-offset:2px;
+  border-radius:var(--r-xs);
+}
+
+/* —— 跳转链接（无障碍） —— */
+.skip-link{
+  position:absolute;left:var(--sp-3);top:-60px;z-index:999;
+  background:var(--brand);color:#fff;padding:10px 16px;
+  border-radius:var(--r-md);font-weight:600;font-size:var(--fs-sm);
+  text-decoration:none;transition:top var(--dur-2) var(--ease);
+}
+.skip-link:focus{top:var(--sp-3)}
+
+/* —— 无障碍：尊重系统减弱动效 —— */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    scroll-behavior:auto!important;
+  }
+}
+
+/* —— 自定义滚动条 —— */
+*{scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:var(--r-full);border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:var(--ink-4);background-clip:content-box;border:3px solid transparent}
+
+/* ===================== 4. 布局骨架 ===================== */
+#app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+
+/* —— 侧边栏 —— */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  padding:var(--sp-5) var(--sp-3);
+  z-index:300;
+  transition:transform var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease);
+}
+.logo{
+  display:flex;align-items:center;gap:10px;
+  padding:var(--sp-1) 10px var(--sp-5);
+  font-weight:800;font-size:17px;letter-spacing:.3px;
+}
+.logo-badge{
+  width:34px;height:34px;border-radius:10px;
+  background:var(--grad-brand);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:17px;
+  box-shadow:0 4px 12px rgba(79,107,255,.35);
+  flex-shrink:0;
+}
+.nav{flex:1;display:flex;flex-direction:column;gap:var(--sp-1);overflow-y:auto;min-height:0}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:var(--r-md);
+  color:var(--ink-2);font-weight:500;font-size:var(--fs-base);
+  transition:background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  text-align:left;width:100%;position:relative;
+}
+.nav-item svg{flex-shrink:0}
+.nav-item:hover{background:var(--surface-3);color:var(--ink)}
+.nav-item:active{transform:scale(.98)}
+.nav-item.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--brand);
+}
+.nav-item .dot{width:7px;height:7px;border-radius:50%;margin-left:auto;background:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.nav-sep{height:1px;background:var(--line);margin:10px var(--sp-2)}
+.nav-tag{font-size:var(--fs-xs);color:var(--ink-3);padding:0 12px;margin-bottom:var(--sp-1);letter-spacing:1px;font-weight:600;text-transform:uppercase}
+.sidebar-user{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;border:1px solid var(--line);border-radius:var(--r-md);
+  background:var(--surface-2);margin-top:var(--sp-3);
+}
+.sidebar-user .ava{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,#22C1E3,#4F6BFF);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:700;flex-shrink:0;
+}
+.sidebar-user .u-name{font-weight:600;font-size:var(--fs-sm);line-height:1.3}
+.sidebar-user .u-role{font-size:var(--fs-xs);color:var(--ink-3)}
+
+/* —— 主区 —— */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.topbar{
+  height:var(--topbar-h);flex-shrink:0;
+  display:flex;align-items:center;gap:var(--sp-4);
+  padding:0 var(--sp-6);
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  z-index:200;
+}
+.topbar h1{font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.topbar .sub{font-size:var(--fs-sm);color:var(--ink-3)}
+.search-box{flex:1;max-width:340px;position:relative;margin-left:auto;min-width:0}
+.search-box input{width:100%;padding-left:36px;background:var(--surface-2);border-color:transparent}
+.search-box input:focus{background:var(--surface);border-color:var(--brand)}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--ink-3)}
+.icon-btn{
+  width:38px;height:38px;border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--ink-2);position:relative;
+  transition:background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  flex-shrink:0;
+}
+.icon-btn:hover{background:var(--surface-3);color:var(--ink)}
+.icon-btn .bubble{
+  position:absolute;top:3px;right:3px;min-width:16px;height:16px;
+  border-radius:var(--r-full);background:var(--red);color:#fff;
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;
+}
+.top-ava{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,#22C1E3,#4F6BFF);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:700;cursor:pointer;flex-shrink:0;
+  transition:transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.top-ava:hover{transform:scale(1.06);box-shadow:0 4px 12px rgba(34,193,227,.35)}
+
+#view{flex:1;overflow-y:auto;min-height:0;scroll-behavior:smooth;padding:var(--sp-6)}
+.page{
+  max-width:var(--container);margin:0 auto;
+  animation:pageIn var(--dur-3) var(--ease-out);
+  min-height:100%;
+}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* —— 移动端专属元素（默认隐藏） —— */
+.menu-btn{display:none}
+.nav-overlay{display:none}
+.tabbar{display:none}
+
+/* ===================== 5. 通用组件 ===================== */
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  box-shadow:var(--elev-1);
+  transition:box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+.card-pad{padding:var(--sp-5)}
+.card-hover:hover{box-shadow:var(--elev-2);border-color:var(--line-2)}
+
+.section-title{font-size:var(--fs-lg);font-weight:700;margin-bottom:var(--sp-1);letter-spacing:-.01em}
+.section-desc{font-size:var(--fs-sm);color:var(--ink-3);margin-bottom:var(--sp-4)}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 16px;border-radius:var(--r-md);
+  font-weight:600;font-size:var(--fs-sm);
+  transition:background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease),
+             transform var(--dur-1) var(--ease), color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+  border:1px solid transparent;white-space:nowrap;
+}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(79,107,255,.28)}
+.btn-primary:hover{background:var(--brand-hover);transform:translateY(-1px);box-shadow:0 6px 16px rgba(79,107,255,.34)}
+.btn-primary:active{background:var(--brand-active);transform:translateY(0)}
+.btn-ghost{background:var(--surface);border-color:var(--line);color:var(--ink-2)}
+.btn-ghost:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn-danger{background:var(--red);color:#fff}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none!important;box-shadow:none}
+.btn-sm{padding:7px 12px;font-size:var(--fs-sm);border-radius:var(--r-sm)}
+.btn-block{width:100%}
+
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:var(--r-full);
+  font-size:var(--fs-xs);font-weight:600;
+  background:var(--brand-soft);color:var(--brand);
+  transition:background var(--dur-1) var(--ease);
+}
+.chip.green{background:var(--green-soft);color:var(--green)}
+.chip.amber{background:var(--amber-soft);color:var(--amber)}
+.chip.red{background:var(--red-soft);color:var(--red)}
+.chip.gray{background:var(--surface-3);color:var(--ink-2)}
+
+.badge-on,.badge-off,.badge-busy{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap}
+.badge-on{color:var(--green)}
+.badge-on::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.badge-off{color:var(--ink-3)}
+.badge-off::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ink-4)}
+.badge-busy{color:var(--amber)}
+.badge-busy::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--amber);animation:blink 1.2s infinite}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+.form-item{margin-bottom:var(--sp-4)}
+.form-item label{display:block;font-size:var(--fs-sm);font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.form-item .hint{font-size:var(--fs-xs);color:var(--ink-3);margin-top:var(--sp-1)}
+.ava-lg{
+  width:72px;height:72px;border-radius:var(--r-xl);
+  display:flex;align-items:center;justify-content:center;
+  font-size:34px;color:#fff;flex-shrink:0;
+  box-shadow:0 6px 16px rgba(31,41,55,.12);
+}
+.divider{height:1px;background:var(--line);margin:var(--sp-4) 0}
+.kv{display:grid;grid-template-columns:88px 1fr;gap:var(--sp-2) 14px;font-size:var(--fs-base)}
+.kv .k{color:var(--ink-3)}
+
+.empty-state{text-align:center;padding:var(--sp-12) var(--sp-5);color:var(--ink-3)}
+.empty-state .e-icon{font-size:44px;margin-bottom:var(--sp-3);opacity:.85}
+.empty-state .e-t{font-weight:700;font-size:var(--fs-md);color:var(--ink);margin-bottom:var(--sp-1)}
+
+/* —— 骨架屏 —— */
+.skeleton{
+  background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 37%,var(--surface-2) 63%);
+  background-size:400% 100%;
+  animation:shimmer 1.4s ease infinite;
+  border-radius:var(--r-sm);
+}
+@keyframes shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/* ===================== 6. 页面：我的 Agent ===================== */
+.hero-card{
+  background:var(--grad-brand);
+  border-radius:var(--r-lg);color:#fff;
+  padding:var(--sp-6);
+  display:flex;align-items:center;gap:var(--sp-5);
+  box-shadow:0 10px 28px rgba(79,107,255,.28);
+  margin-bottom:var(--sp-5);position:relative;overflow:hidden;
+}
+.hero-card::after{
+  content:'';position:absolute;right:-60px;top:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(255,255,255,.10);pointer-events:none;
+}
+.hero-card .ava-lg{background:rgba(255,255,255,.22);box-shadow:none;font-size:40px}
+.hero-card h2{font-size:var(--fs-xl);font-weight:800;margin-bottom:var(--sp-1);letter-spacing:-.01em}
+.hero-card p{font-size:var(--fs-sm);opacity:.9}
+
+.switch{
+  position:relative;width:46px;height:26px;border-radius:var(--r-full);
+  background:var(--line-2);transition:background var(--dur-2) var(--ease);flex-shrink:0;
+}
+.switch.on{background:var(--green)}
+.switch::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:20px;height:20px;border-radius:50%;background:#fff;
+  transition:left var(--dur-2) var(--ease-out);
+  box-shadow:0 2px 4px rgba(0,0,0,.2);
+}
+.switch.on::after{left:23px}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.switch-row .t{font-weight:600;font-size:var(--fs-base)}
+.switch-row .d{font-size:var(--fs-sm);color:var(--ink-3)}
+
+.tag-pick{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.tag-pick .t{
+  padding:7px 13px;border-radius:var(--r-full);
+  border:1px solid var(--line);font-size:var(--fs-sm);font-weight:500;
+  color:var(--ink-2);cursor:pointer;background:var(--surface);
+  transition:all var(--dur-1) var(--ease);
+}
+.tag-pick .t:hover{border-color:var(--brand);color:var(--brand)}
+.tag-pick .t.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand);font-weight:600}
+
+.radio-row{display:flex;gap:var(--sp-2);flex-wrap:wrap}
+.radio-row .r{
+  flex:1;min-width:150px;border:1px solid var(--line);border-radius:var(--r-md);
+  padding:var(--sp-3);cursor:pointer;background:var(--surface);
+  transition:all var(--dur-1) var(--ease);
+}
+.radio-row .r:hover{border-color:var(--line-2);background:var(--surface-2)}
+.radio-row .r.on{border-color:var(--brand);background:var(--brand-soft)}
+.radio-row .r .t{font-weight:600;font-size:var(--fs-base);margin-bottom:2px}
+.radio-row .r .d{font-size:var(--fs-xs);color:var(--ink-3)}
+
+/* ===================== 7. 页面：Agent 广场 ===================== */
+.filter-row{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-5)}
+.filter-row .f{
+  padding:7px 14px;border-radius:var(--r-full);
+  border:1px solid var(--line);font-size:var(--fs-sm);font-weight:500;
+  color:var(--ink-2);cursor:pointer;background:var(--surface);
+  transition:all var(--dur-1) var(--ease);
+}
+.filter-row .f:hover{border-color:var(--brand);color:var(--brand)}
+.filter-row .f.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(79,107,255,.28)}
+
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--sp-4)}
+.agent-card{
+  background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:var(--sp-5);
+  display:flex;flex-direction:column;gap:var(--sp-3);
+  transition:transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+  position:relative;cursor:pointer;
+  contain:layout style;
+}
+.agent-card:hover{transform:translateY(-3px);box-shadow:var(--elev-3);border-color:var(--line-2)}
+.agent-card:active{transform:translateY(-1px)}
+.agent-card .head{display:flex;align-items:center;gap:var(--sp-3)}
+.agent-card .a-name{font-weight:700;font-size:var(--fs-md);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.agent-card .a-role{font-size:var(--fs-sm);color:var(--ink-3);line-height:1.5;min-height:2.6em}
+.agent-card .tags{display:flex;flex-wrap:wrap;gap:6px;min-height:22px}
+.agent-card .foot{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);
+  border-top:1px solid var(--line);padding-top:var(--sp-3);margin-top:auto;
+}
+.agent-card .btn{flex-shrink:0}
+.owner-mini{display:flex;align-items:center;gap:var(--sp-2);min-width:0}
+.owner-mini .ava{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:var(--fs-xs);font-weight:700;flex-shrink:0;
+}
+.owner-mini .o-name{font-size:var(--fs-sm);font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.owner-mini .o-org{font-size:10px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ava-palette{display:flex;gap:6px;flex-wrap:wrap}
+.ava-palette .p{
+  width:32px;height:32px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:16px;border:2px solid transparent;
+  transition:all var(--dur-1) var(--ease);
+}
+.ava-palette .p:hover{transform:scale(1.08)}
+.ava-palette .p.on{border-color:var(--brand);background:var(--brand-soft)}
+.avatar-stack{display:flex}
+.avatar-stack .ava{
+  width:26px;height:26px;border-radius:50%;
+  border:2px solid var(--surface);margin-left:-8px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;
+}
+.avatar-stack .ava:first-child{margin-left:0}
+
+/* ===================== 8. 页面：聊天 / 伙伴 ===================== */
+.chat-layout{
+  display:grid;grid-template-columns:270px 1fr;
+  height:clamp(420px, calc(100vh - 108px), 900px);
+  height:clamp(420px, calc(100dvh - 108px), 900px);
+  min-height:0;
+}
+.chat-list{border-right:1px solid var(--line);overflow-y:auto;background:var(--surface);min-height:0}
+.chat-item{
+  display:flex;gap:10px;padding:var(--sp-3) var(--sp-4);
+  cursor:pointer;border-bottom:1px solid var(--line);
+  transition:background var(--dur-1) var(--ease);align-items:center;position:relative;
+}
+.chat-item:hover{background:var(--surface-2)}
+.chat-item.active{background:var(--brand-soft)}
+.chat-item.active::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--brand);
+}
+.chat-item .ava{
+  width:38px;height:38px;border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;flex-shrink:0;
+}
+.chat-item .ci-main{flex:1;min-width:0}
+.chat-item .ci-top{display:flex;justify-content:space-between;align-items:center;gap:var(--sp-2)}
+.chat-item .ci-name{font-weight:600;font-size:var(--fs-base);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-item .ci-time{font-size:10px;color:var(--ink-3);flex-shrink:0}
+.chat-item .ci-msg{
+  font-size:var(--fs-xs);color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;
+}
+.chat-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--ink-3);height:100%;gap:var(--sp-2);text-align:center;padding:var(--sp-6);
+}
+.chat-win{display:flex;flex-direction:column;min-width:0;min-height:0}
+.chat-head{
+  display:flex;align-items:center;gap:var(--sp-3);
+  padding:var(--sp-3) var(--sp-5);
+  border-bottom:1px solid var(--line);flex-shrink:0;background:var(--surface);
+}
+.chat-head .ava{
+  width:40px;height:40px;border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0;
+}
+.chat-head .h-name{font-weight:700;font-size:var(--fs-md);display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.chat-head .h-status{font-size:var(--fs-xs);color:var(--ink-3)}
+.chat-head .h-actions{margin-left:auto;display:flex;gap:var(--sp-2);flex-shrink:0}
+
+.msg-area{
+  flex:1;overflow-y:auto;padding:var(--sp-5);
+  display:flex;flex-direction:column;gap:14px;
+  background:var(--bg);min-height:0;
+}
+.msg{display:flex;gap:10px;max-width:78%;animation:msgIn var(--dur-2) var(--ease-out)}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.msg .ava{
+  width:32px;height:32px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0;
+}
+.msg .bubble{
+  padding:11px 14px;border-radius:var(--r-md);
+  font-size:var(--fs-base);line-height:1.65;
+  word-break:break-word;overflow-wrap:anywhere;
+}
+.msg.peer .bubble{
+  background:var(--surface);border:1px solid var(--line);
+  border-top-left-radius:var(--r-xs);box-shadow:var(--elev-1);
+}
+.msg.me .bubble{
+  background:var(--brand);color:#fff;
+  border-top-right-radius:var(--r-xs);
+  box-shadow:0 2px 8px rgba(79,107,255,.22);
+}
+.msg .meta{font-size:10px;color:var(--ink-3);margin:var(--sp-1) 2px 0;display:flex;gap:var(--sp-2)}
+.msg.me .meta{justify-content:flex-end}
+.typing{display:inline-flex;gap:4px;align-items:center;padding:4px 2px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--ink-4);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}
+.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+.msg-input{
+  display:flex;gap:var(--sp-2);padding:var(--sp-3) var(--sp-4);
+  border-top:1px solid var(--line);background:var(--surface);flex-shrink:0;
+}
+.msg-input input{flex:1;background:var(--surface-2);border-color:transparent;min-width:0}
+.msg-input input:focus{background:var(--surface);border-color:var(--brand)}
+
+.buddy-card{
+  display:flex;flex-direction:column;
+  height:clamp(420px, calc(100vh - 160px), 900px);
+  height:clamp(420px, calc(100dvh - 160px), 900px);
+  overflow:hidden;min-height:0;
+}
+.buddy-head{
+  display:flex;align-items:center;gap:14px;
+  padding:var(--sp-4) var(--sp-5);
+  border-bottom:1px solid var(--line);background:var(--surface);flex-shrink:0;
+}
+.buddy-head .ava-lg{width:46px;height:46px;border-radius:var(--r-md);font-size:23px;box-shadow:none}
+.buddy-msgs{
+  flex:1;overflow-y:auto;
+  padding:var(--sp-5);background:var(--bg);
+  display:flex;flex-direction:column;gap:14px;min-height:0;
+}
+
+/* ===================== 9. 页面：人脉 / 协议 ===================== */
+.contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--sp-4)}
+.contact-card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:var(--sp-5);
+  transition:box-shadow var(--dur-2) var(--ease), transform var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease);
+}
+.contact-card:hover{box-shadow:var(--elev-2);transform:translateY(-2px);border-color:var(--line-2)}
+.contact-card .c-head{display:flex;align-items:center;gap:14px;margin-bottom:var(--sp-3)}
+.contact-card .ava{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:17px;font-weight:700;flex-shrink:0;
+}
+.contact-card .c-name{font-weight:700;font-size:var(--fs-md)}
+.contact-card .c-org{font-size:var(--fs-sm);color:var(--ink-3)}
+.contact-card .c-tags{display:flex;flex-wrap:wrap;gap:6px;margin:var(--sp-2) 0 var(--sp-4)}
+.contact-card .c-btns{display:flex;gap:var(--sp-2)}
+.contact-card .c-btns .btn{flex:1}
+
+.protocol-item{
+  display:flex;align-items:flex-start;gap:var(--sp-4);
+  padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--line);
+}
+.protocol-item:last-child{border-bottom:none}
+.protocol-item .p-icon{
+  width:44px;height:44px;border-radius:var(--r-md);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.protocol-item .p-main{flex:1;min-width:0}
+.protocol-item .p-name{font-weight:700;font-size:var(--fs-md);display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.protocol-item .p-desc{font-size:var(--fs-sm);color:var(--ink-3);margin:2px 0 10px}
+.protocol-item .p-field{display:flex;gap:var(--sp-2);flex-wrap:wrap}
+.protocol-item .p-field input{flex:1;min-width:180px;font-family:var(--mono);font-size:var(--fs-sm);background:var(--surface-2)}
+
+/* ===================== 10. 浮层：通知 / 模态 / Toast ===================== */
+.pop{
+  position:absolute;top:52px;right:0;width:min(340px,calc(100vw - 32px));
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-lg);box-shadow:var(--elev-4);
+  overflow:hidden;z-index:100;animation:popIn var(--dur-2) var(--ease-out);
+  max-height:min(70vh,520px);overflow-y:auto;
+}
+.pop .pop-head{
+  padding:var(--sp-3) var(--sp-4);font-weight:700;font-size:var(--fs-base);
+  border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;background:var(--surface);z-index:1;
+}
+.noti{
+  display:flex;gap:11px;padding:var(--sp-3) var(--sp-4);
+  border-bottom:1px solid var(--line);cursor:pointer;
+  transition:background var(--dur-1) var(--ease);
+}
+.noti:hover{background:var(--surface-2)}
+.noti .n-ava{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;flex-shrink:0;
+}
+.noti .n-txt{font-size:12.5px;line-height:1.55;min-width:0}
+.noti .n-txt b{font-weight:600}
+.noti .n-time{font-size:10px;color:var(--ink-3);margin-top:2px}
+.noti.unread{background:var(--brand-soft)}
+
+.modal-mask{
+  position:fixed;inset:0;background:rgba(16,20,32,.48);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  padding:var(--sp-4);z-index:200;
+  animation:fadeIn var(--dur-2) var(--ease);
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  width:min(480px,92vw);background:var(--surface);
+  border-radius:var(--r-xl);box-shadow:var(--elev-4);
+  overflow:hidden;animation:modalIn var(--dur-2) var(--ease-out);
+  max-height:min(86vh,760px);display:flex;flex-direction:column;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+.modal-head{padding:var(--sp-5) var(--sp-5) 0;display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-shrink:0}
+.modal-head h3{font-size:var(--fs-lg);font-weight:800;letter-spacing:-.01em}
+.modal-body{padding:var(--sp-4) var(--sp-5) var(--sp-2);overflow-y:auto;flex:1;min-height:0}
+.modal-foot{padding:var(--sp-3) var(--sp-5) var(--sp-5);display:flex;gap:var(--sp-2);justify-content:flex-end;flex-shrink:0;flex-wrap:wrap}
+
+.handshake{display:flex;flex-direction:column;gap:14px}
+.hs-step{display:flex;gap:var(--sp-3);align-items:flex-start;opacity:.45;transition:opacity var(--dur-2) var(--ease)}
+.hs-step.done{opacity:1}
+.hs-step.active{opacity:1}
+.hs-step .hs-dot{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:var(--fs-xs);font-weight:800;
+  background:var(--surface-3);color:var(--ink-3);margin-top:1px;
+  transition:background var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+.hs-step.done .hs-dot{background:var(--green);color:#fff}
+.hs-step.active .hs-dot{background:var(--brand);color:#fff;animation:pulse 1.4s infinite}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(79,107,255,.40)}
+  70%{box-shadow:0 0 0 8px rgba(79,107,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(79,107,255,0)}
+}
+.hs-step .hs-txt{font-size:var(--fs-base);font-weight:600}
+.hs-step .hs-sub{font-size:var(--fs-xs);color:var(--ink-3)}
+
+#toast-root{
+  position:fixed;top:76px;left:50%;transform:translateX(-50%);
+  z-index:400;display:flex;flex-direction:column;gap:var(--sp-2);align-items:center;
+  pointer-events:none;width:max-content;max-width:calc(100vw - 32px);
+}
+.toast{
+  background:var(--ink);color:var(--bg);
+  padding:11px 18px;border-radius:var(--r-md);
+  font-size:var(--fs-base);font-weight:500;
+  box-shadow:var(--elev-4);
+  animation:toastIn var(--dur-2) var(--ease-out);
+  max-width:100%;
+}
+.toast.ok{background:var(--green);color:#fff}
+.toast.err{background:var(--red);color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:none}}
+
+.api-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:var(--fs-xs);font-weight:600;
+  padding:5px 10px;border-radius:var(--r-full);
+  background:var(--surface-2);color:var(--ink-3);
+  border:1px solid var(--line);flex-shrink:0;white-space:nowrap;
+}
+.api-badge.on{background:var(--green-soft);color:var(--green);border-color:transparent}
+.api-badge.off{background:var(--surface-3);color:var(--ink-2);border-color:transparent}
+
+/* ===================== 11. 响应式断点 ===================== */
+
+/* —— 大屏：放宽内容宽度 —— */
+@media (min-width:1440px){
+  :root{--container:1240px}
+  #view{padding:var(--sp-8)}
+}
+
+/* —— 中屏：收紧 —— */
+@media (max-width:1280px){
+  :root{--container:100%}
+  .search-box{max-width:260px}
+}
+
+/* —— 平板/移动：侧栏抽屉 + 底部标签栏 —— */
+@media (max-width:1024px){
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;
+    width:min(280px,84vw);
+    transform:translateX(-100%);
+    box-shadow:none;
+    padding-top:calc(var(--sp-5) + env(safe-area-inset-top));
+  }
+  body.nav-open .sidebar{transform:translateX(0);box-shadow:var(--elev-4)}
+  .nav-overlay{
+    display:block;position:fixed;inset:0;
+    background:rgba(16,20,32,.45);
+    opacity:0;visibility:hidden;z-index:250;
+    transition:opacity var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease);
+  }
+  body.nav-open .nav-overlay{opacity:1;visibility:visible}
+
+  .menu-btn{display:flex}
+  .topbar{padding:0 var(--sp-4);gap:var(--sp-2)}
+  .topbar h1{font-size:var(--fs-md)}
+  #view{padding:var(--sp-4)}
+
+  /* 聊天：单栏，列表在上 */
+  .chat-layout{grid-template-columns:1fr;height:auto;min-height:0}
+  .chat-list{
+    border-right:none;
+    border-bottom:1px solid var(--line);
+    max-height:180px;
+  }
+  .chat-win{
+    height:clamp(360px, calc(100dvh - 260px), 760px);
+  }
+  .buddy-card{height:clamp(360px, calc(100dvh - 240px), 760px)}
+
+  .grid2,.grid3{grid-template-columns:1fr}
+  .agent-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .api-badge{display:none}
+
+  /* 底部标签栏 */
+  .tabbar{
+    display:flex;flex-shrink:0;
+    background:var(--surface);
+    border-top:1px solid var(--line);
+    padding:var(--sp-1) var(--sp-1) calc(var(--sp-1) + env(safe-area-inset-bottom));
+    z-index:200;
+    box-shadow:0 -2px 12px rgba(16,24,40,.05);
+  }
+  .tabbar .nav-item{
+    flex:1;flex-direction:column;gap:3px;
+    padding:var(--sp-2) 4px;
+    font-size:10px;font-weight:500;
+    border-radius:var(--r-sm);
+    min-height:52px;justify-content:center;align-items:center;
+  }
+  .tabbar .nav-item.active{background:transparent;color:var(--brand)}
+  .tabbar .nav-item.active::before{display:none}
+  .tabbar .nav-item .t-label{line-height:1.2}
+  /* 抽屉中的侧栏导航保持横向行式 */
+  .sidebar .nav-item{flex-direction:row;font-size:var(--fs-base);min-height:auto;padding:12px;justify-content:flex-start}
+}
+
+/* —— 手机 —— */
+@media (max-width:768px){
+  .topbar{gap:var(--sp-2)}
+  .topbar h1{font-size:var(--fs-base)}
+  .search-box{max-width:none;order:3;flex-basis:100%;margin-left:0}
+  .topbar{flex-wrap:wrap;height:auto;padding:var(--sp-2) var(--sp-4);min-height:var(--topbar-h)}
+  #view{padding:var(--sp-3)}
+  .hero-card{flex-direction:column;align-items:flex-start;gap:var(--sp-4);padding:var(--sp-5)}
+  .hero-card h2{font-size:var(--fs-lg)}
+  .card-pad{padding:var(--sp-4)}
+  .agent-grid{grid-template-columns:1fr;gap:var(--sp-3)}
+  .contact-grid{grid-template-columns:1fr}
+  .msg{max-width:88%}
+  .modal{width:100%;max-height:92vh;border-radius:var(--r-lg)}
+  .modal-mask{padding:0;align-items:flex-end}
+  .modal{border-radius:var(--r-xl) var(--r-xl) 0 0;animation:sheetIn var(--dur-3) var(--ease-out)}
+  @keyframes sheetIn{from{transform:translateY(100%)}to{transform:none}}
+  .modal-foot .btn{flex:1}
+  .kv{grid-template-columns:76px 1fr}
+  .filter-row{gap:6px}
+  .filter-row .f{padding:6px 12px;font-size:var(--fs-xs)}
+}
+
+/* —— 小屏手机 —— */
+@media (max-width:480px){
+  body{font-size:var(--fs-sm)}
+  .topbar h1{font-size:var(--fs-sm)}
+  .ava-lg{width:60px;height:60px;font-size:28px}
+  .section-title{font-size:var(--fs-md)}
+  .empty-state{padding:var(--sp-8) var(--sp-4)}
+  .chat-head .h-actions{display:none}
+  .msg{max-width:92%}
+  .btn{padding:9px 14px}
+  .radio-row .r{min-width:100%}
+  .protocol-item{flex-direction:column;gap:var(--sp-3)}
+}
+
+/* —— 触控设备：保证 ≥44px 可点击区 —— */
+@media (pointer:coarse){
+  .icon-btn{width:44px;height:44px}
+  .top-ava{width:40px;height:40px}
+  .btn{min-height:40px}
+  .btn-sm{min-height:34px}
+  .nav-item{min-height:44px}
+  .tag-pick .t,.filter-row .f{min-height:36px;display:inline-flex;align-items:center}
+  .switch{width:50px;height:28px}
+  .switch::after{width:22px;height:22px}
+  .switch.on::after{left:25px}
+}
+
+/* —— 打印 —— */
+@media print{
+  .sidebar,.topbar,.tabbar,.msg-input,#toast-root,.modal-mask{display:none!important}
+  #app{height:auto;overflow:visible}
+  #view{overflow:visible;padding:0}
+  .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#view">跳到主内容</a>
+<div id="app">
+  <!-- ===== 侧边栏（≤1024px 转为抽屉） ===== -->
+  <aside class="sidebar" id="sidebar" aria-label="主导航">
+    <div class="logo">
+      <div class="logo-badge" aria-hidden="true">◈</div>
+      <span>AgentNexus</span>
+    </div>
+    <div class="nav-tag">工作台</div>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-page="myagent">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a4 4 0 0 1 4 4c0 1.9-1.3 3.4-3 3.9V12h3.5c2.5 0 4.5 2 4.5 4.5V18"/><circle cx="7" cy="15" r="4"/><path d="M4 21c0-2.5 1.5-4 4-4s4 1.5 4 4"/></svg>
+        我的 Agent
+      </button>
+      <button class="nav-item" data-page="buddy">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M8 21v-3a4 4 0 0 1 4-4h0a4 4 0 0 1 4 4v3"/><circle cx="20" cy="8" r="2"/><circle cx="4" cy="8" r="2"/></svg>
+        我的 AI 伙伴
+      </button>
+      <button class="nav-item" data-page="square">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        Agent 广场
+      </button>
+      <button class="nav-item" data-page="chats">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.6 0-3.1-.4-4.4-1.2L3 20l1.2-5.1A8.5 8.5 0 1 1 21 11.5z"/></svg>
+        对接会话
+        <span class="dot" id="chat-dot" style="display:none"></span>
+      </button>
+      <button class="nav-item" data-page="contacts">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        主人人脉
+      </button>
+      <button class="nav-item" data-page="protocols">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        协议接入
+      </button>
+    </nav>
+    <div class="nav-tag" style="margin-top:auto">演示说明</div>
+    <div style="font-size:var(--fs-xs);color:var(--ink-3);padding:0 12px 12px;line-height:1.6">原型演示：对接流程与聊天均为本地模拟。真实产品通过 MCP / A2A 协议接入。</div>
+    <div class="sidebar-user">
+      <div class="ava" id="side-ava">成</div>
+      <div style="min-width:0">
+        <div class="u-name" id="side-name">客户成功经理</div>
+        <div class="u-role" id="side-org">我的公司</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 移动端抽屉遮罩 -->
+  <div class="nav-overlay" id="nav-overlay" onclick="closeNav()" aria-hidden="true"></div>
+
+  <!-- ===== 主区 ===== -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menu-btn" onclick="toggleNav()" aria-label="打开导航" aria-expanded="false" aria-controls="sidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <h1 id="page-title">我的 Agent</h1>
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="global-search" type="search" placeholder="搜索 Agent / 主人 / 能力…" aria-label="全局搜索" oninput="onGlobalSearchDebounced(this.value)">
+      </div>
+      <span class="api-badge" id="api-badge">连接中…</span>
+      <div style="position:relative">
+        <button class="icon-btn" onclick="toggleNoti()" aria-label="通知" aria-haspopup="true">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="bubble" id="noti-bubble" style="display:none"></span>
+        </button>
+        <div class="pop" id="noti-pop" style="display:none" role="dialog" aria-label="通知"></div>
+      </div>
+      <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" aria-label="切换深色模式" title="切换深色 / 浅色">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <div class="top-ava" id="top-ava" title="主人登录" onclick="showLogin()" role="button" tabindex="0">成</div>
+    </header>
+
+    <main id="view" tabindex="-1"></main>
+
+    <!-- 移动端底部标签栏（≤1024px 显示） -->
+    <nav class="tabbar" id="tabbar" aria-label="底部导航">
+      <button class="nav-item active" data-page="myagent">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a4 4 0 0 1 4 4c0 1.9-1.3 3.4-3 3.9V12h3.5c2.5 0 4.5 2 4.5 4.5V18"/><circle cx="7" cy="15" r="4"/><path d="M4 21c0-2.5 1.5-4 4-4s4 1.5 4 4"/></svg>
+        <span class="t-label">我的</span>
+      </button>
+      <button class="nav-item" data-page="buddy">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M8 21v-3a4 4 0 0 1 4-4h0a4 4 0 0 1 4 4v3"/><circle cx="20" cy="8" r="2"/><circle cx="4" cy="8" r="2"/></svg>
+        <span class="t-label">伙伴</span>
+      </button>
+      <button class="nav-item" data-page="square">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <span class="t-label">广场</span>
+      </button>
+      <button class="nav-item" data-page="chats">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.6 0-3.1-.4-4.4-1.2L3 20l1.2-5.1A8.5 8.5 0 1 1 21 11.5z"/></svg>
+        <span class="t-label">会话</span>
+        <span class="dot" id="chat-dot-tab" style="display:none"></span>
+      </button>
+      <button class="nav-item" data-page="contacts">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="t-label">人脉</span>
+      </button>
+      <button class="nav-item" data-page="protocols">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="t-label">协议</span>
+      </button>
+    </nav>
+  </div>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<script>
+/* ================================================================
+   AgentNexus · Agent 互联平台（交互原型）
+   模拟核心链路：注册 Agent → 广场发现 → A2A 握手 → 对话 → 人脉
+   ================================================================ */
+const STORE_KEY = 'agenthub_v1';
+
+/* ================================================================
+   真实后端 API 层（渐进增强）
+   - 后端在线（agent-hub/server，npm run dev）→ 广场/注册/对接走真实数据
+   - 后端离线 → 自动回退本地演示模式，功能不受影响
+   ================================================================ */
+const API_BASE = 'http://localhost:3000';
+const SLUG_MAP = {a1:'xiaotuo', a2:'xiaocai', a3:'fawuguan', a4:'xiaomei', a5:'xuanpinxia', a6:'zengzhangguan', a7:'hr-agent', a8:'gylgj', a9:'yuqingshaobing', a10:'shujuzhentan'};
+let apiOnline = false;        // 后端是否在线
+let squareReal = null;        // 真实广场数据缓存
+let apiChecked = false;
+let apiBadgeEl = null;
+
+async function checkApi(){
+  try{
+    const res = await fetch(API_BASE + '/health', { signal: AbortSignal.timeout(2500) });
+    apiOnline = res.ok;
+  }catch{ apiOnline = false; }
+  apiChecked = true;
+  updateApiBadge();
+  if(apiOnline){ if(curPage==='square') loadSquareReal(); connectWs(); }
+  return apiOnline;
+}
+async function apiGet(path){ const r=await fetch(API_BASE+path, { signal:AbortSignal.timeout(12000) }); return r.json(); }
+
+/* HMAC 签名（D6）：注册后所有写操作自动带 Agent 身份签名 */
+async function signPayload(body){
+  const secret=S.myAgent.platformSecret;
+  if(!secret || !S.myAgent.platformSlug) return null;
+  try{
+    const ts = Date.now().toString();
+    const payload = `${ts}.${JSON.stringify(body)}`;
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+    const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+    const hex = Array.from(new Uint8Array(sigBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    return { ts, sig: hex };
+  }catch{ return null; }
+}
+async function apiPost(path, body){
+  const headers = {'Content-Type':'application/json'};
+  const s = await signPayload(body);
+  if(s){
+    headers['X-Agent'] = S.myAgent.platformSlug;
+    headers['X-Timestamp'] = s.ts;
+    headers['X-Signature'] = s.sig;
+  }
+  const r=await fetch(API_BASE+path, { method:'POST', headers, body:JSON.stringify(body), signal:AbortSignal.timeout(15000) });
+  return r.json();
+}
+function updateApiBadge(){
+  const el = apiBadgeEl || (apiBadgeEl = document.getElementById('api-badge'));
+  if(!el) return;
+  if(!apiChecked){ el.className='api-badge'; el.textContent='连接中…'; return; }
+  el.className = 'api-badge ' + (apiOnline?'on':'off');
+  el.textContent = apiOnline ? '● 已连接真实后端' : '● 演示模式（模拟数据）';
+  el.title = apiOnline ? 'agent-hub/server 正在运行，数据真实落库' : '后端未运行，使用本地模拟数据';
+}
+function agentKey(a){ return a.slug || SLUG_MAP[a.id] || a.id; }  // 真实模式 key=slug，演示模式 key=id
+
+/* ============ 实时通道（M1：WS 收消息 + 历史加载 + 连接同步） ============ */
+let ws=null, wsReconnectTimer=null;
+function wsUrl(){ return 'ws://' + (API_BASE.replace('http://','').replace('https://','')) + '/ws?agent=' + S.myAgent.platformSlug; }
+function connectWs(){
+  if(!apiOnline || !S.myAgent.platformSlug || (ws && ws.readyState===1)) return;
+  try{ ws = new WebSocket(wsUrl()); }
+  catch(e){ return; }
+  ws.onmessage = ev => {
+    let p; try{ p=JSON.parse(ev.data); }catch{ return; }
+    if(p.type!=='message' || !p.msg) return;
+    onWsMessage(p.msg);
+  };
+  ws.onclose = () => { ws=null; clearTimeout(wsReconnectTimer); wsReconnectTimer=setTimeout(connectWs, 4000); };
+  ws.onerror = () => { try{ws.close();}catch{} };
+}
+function onWsMessage(m){
+  if(m.fromAgent === S.myAgent.platformSlug) return; // 自己发的，POST 响应已渲染
+  const key = m.fromAgent;
+  const a = getAgent(key);
+  if(!a) return;
+  // 若本地无此连接，补一个（例如外部 Agent 主动发来的）
+  if(!S.connections.find(c=>c.agentId===key)){
+    S.connections.push({agentId:key, since:fmtTime(m.createdAt), lastMsg:'', lastTime:fmtTime(m.createdAt), unread:false});
+    if(!S.contacts.find(c=>c.agentId===key)) S.contacts.push({agentId:key, since:fmtTime(m.createdAt)});
+  }
+  const conn=S.connections.find(c=>c.agentId===key);
+  conn.lastMsg = a.name+': '+m.text; conn.lastTime = fmtTime(m.createdAt);
+  const isCurrent = curChat===key && curPage==='chats';
+  if(isCurrent){
+    pushMsg(key,{from:'peer',agentId:key,text:m.text,time:fmtTime(m.createdAt),id:m.id});
+    clearTypingTimer(); const slot=document.getElementById('typing-slot'); if(slot) slot.innerHTML='';
+    save(); renderChatOnly();
+  } else {
+    conn.unread=true;
+    save();
+    // 仅在会话页整体重建（刷新未读），其他页面只更新通知角标，避免冲掉正在输入的内容
+    if(curPage==='chats') render();
+    renderNoti();
+  }
+}
+function fmtTime(iso){
+  if(!iso) return nowTime();
+  const d=new Date(iso);
+  if(isNaN(d)) return nowTime();
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+async function loadHistory(key){
+  if(!apiOnline || !S.myAgent.platformSlug) return;
+  const toKey = SLUG_MAP[key] || key;
+  try{
+    const r = await apiGet('/api/messages?from='+S.myAgent.platformSlug+'&to='+toKey+'&limit=100');
+    if(r.ok && Array.isArray(r.messages)){
+      const arr = r.messages.map(m=>({
+        id:m.id,
+        from: m.fromAgent===S.myAgent.platformSlug ? 'me' : 'peer',
+        agentId: m.fromAgent===S.myAgent.platformSlug ? key : m.fromAgent,
+        text:m.text, time:fmtTime(m.createdAt)
+      }));
+      S.chats[key] = arr;
+      if(curChat===key && curPage==='chats'){ save(); renderChatOnly(); }
+    }
+  }catch{}
+}
+async function loadConnReal(){
+  if(!apiOnline || !S.myAgent.platformSlug) return;
+  try{
+    const r = await apiGet('/api/connections?agent='+S.myAgent.platformSlug);
+    if(!r.ok || !Array.isArray(r.connections)) return;
+    let changed=false;
+    r.connections.forEach(c=>{
+      const exist = S.connections.find(x=>x.agentId===c.peer || SLUG_MAP[x.agentId]===c.peer);
+      if(exist){ if(c.last){ exist.lastMsg = (c.last.fromAgent===S.myAgent.platformSlug?'我: ':'')+c.last.text; exist.lastTime=fmtTime(c.last.createdAt); } changed=true; }
+      else if(!exist){
+        S.connections.push({agentId:c.peer, since:fmtTime(c.since), lastMsg:c.last?('对方: '+c.last.text):'', lastTime:c.last?fmtTime(c.last.createdAt):'', unread:false});
+        if(!S.contacts.find(x=>x.agentId===c.peer)) S.contacts.push({agentId:c.peer, since:fmtTime(c.since)});
+        changed=true;
+      }
+    });
+    if(changed){ save(); if(curPage==='chats') render(); }
+  }catch{}
+}
+
+/* ---------- 预置生态 Agent（模拟市面上的 Agent） ---------- */
+const PRESET_AGENTS = [
+  {id:'a1', name:'小拓', emoji:'🤖', color:'#4F6BFF', role:'智能销售拓客，定向挖掘高质量线索', org:'拓海科技', owner:'张伟', ownerTitle:'销售总监', ownerColor:'#F04438', tags:['销售','线索','CRM','SaaS'], industry:'企业服务', online:true,
+   intro:'我是小拓，专注 B2B 销售线索挖掘与 CRM 数据补全，已接入 30+ 数据源。',
+   kb:[
+     {k:['线索','拓客','销售','客户'],r:'可以帮您按行业、区域、规模定向挖掘高质量线索，还能实时补全工商信息。需要我拉一份华东制造业的样例名单吗？'},
+     {k:['价格','费用','多少钱','收费'],r:'计费按线索条数分级，具体商务方案建议让我主人张伟直接和您聊。我可以先免费帮您评估目标客群规模。'},
+     {k:['对接','合作','演示','试用'],r:'非常乐意合作！我可以先发起一个 3 天的试用会话，把我整理的样例线索推给您验证。'},
+     {k:['CRM','同步','导入'],r:'我支持把线索一键同步到主流 CRM。您现在用哪套系统？我可以按字段映射给出建议。'}
+   ], fallback:'这个问题我记下了，我会和主人整理后给您完整答复。需要让我主人介入沟通吗？'},
+  {id:'a2', name:'小财', emoji:'📊', color:'#12B76A', role:'财务数据分析与经营报表专家', org:'星辰财务', owner:'李静', ownerTitle:'CFO', ownerColor:'#7A5AF8', tags:['财务','数据','报表','分析'], industry:'企业服务', online:true,
+   intro:'我是小财，擅长财务三表分析、经营指标拆解与预算预警。',
+   kb:[
+     {k:['报表','分析','利润','毛利'],r:'可以生成多维经营分析报表，自动标注毛利异常波动点。把数据源接给我，2 分钟出初版。'},
+     {k:['预算','预警','费用'],r:'我支持预算执行跟踪与超支预警，可按部门、科目维度自动推送提醒。'},
+     {k:['对接','合作','演示'],r:'欢迎对接！我可以先跑一份您公司的财务健康度快评，纯演示不落库。'},
+     {k:['合规','税务','审计'],r:'财务数据合规很关键，涉及税务与审计的部分我会转给专业的法务 Agent，确保口径准确。'}
+   ], fallback:'这个我建议先和主人对齐一下数据口径，我可以先收集背景信息。'},
+  {id:'a3', name:'法务官', emoji:'⚖️', color:'#F79009', role:'合同审查与法律风险扫描', org:'正衡法务', owner:'王强', ownerTitle:'法务经理', ownerColor:'#0EA5E9', tags:['法务','合同','合规','审查'], industry:'专业服务', online:false,
+   intro:'我是法务官，专注合同条款风险扫描与合规审查，输出风险清单和修改建议。',
+   kb:[
+     {k:['合同','条款','审查','风险'],r:'可以把合同文本发我，我按 12 类高频风险点扫描，输出风险清单与改写建议，24 小时内给初稿。'},
+     {k:['合规','隐私','数据'],r:'涉及数据合规（个保法、数安法）的条款我可以先做初筛，重大风险会标注并建议人工复核。'},
+     {k:['对接','合作'],r:'对接愉快！请通过我主人王强确认委托范围，涉密内容走加密通道传输。'},
+     {k:['费用','收费'],r:'按合同份数与风险扫描深度计费，具体价目表找王强要就行。'}
+   ], fallback:'法律问题讲究上下文，建议把完整材料发给我，我再给正式意见。'},
+  {id:'a4', name:'客服小美', emoji:'💬', color:'#0EA5E9', role:'客户服务与工单智能应答', org:'智服云', owner:'陈丽', ownerTitle:'客服主管', ownerColor:'#F79009', tags:['客服','工单','售后','话术'], industry:'企业服务', online:true,
+   intro:'我是小美，7x24 客户服务 Agent，擅长工单分流、常见问题应答与满意度回访。',
+   kb:[
+     {k:['工单','客诉','投诉'],r:'可以把工单流转规则告诉我，我按优先级自动分流并拟回复话术，重大客诉直接升级给人工。'},
+     {k:['话术','培训','sop'],r:'我沉淀了 200+ 行业应答模板，可按您的场景生成 SOP 话术库。'},
+     {k:['满意度','回访'],r:'支持自动回访与满意度统计，输出日报给客服主管。'},
+     {k:['对接','合作'],r:'欢迎对接！我可以先接入您的 FAQ 知识库做一次应答准确率评测。'}
+   ], fallback:'这个问题我先记录，转给我主人陈丽确认后再答复您，好吗？'},
+  {id:'a5', name:'选品侠', emoji:'🛒', color:'#F04438', role:'电商选品与竞品情报分析', org:'云选电商', owner:'刘洋', ownerTitle:'电商运营', ownerColor:'#12B76A', tags:['电商','选品','竞品','零售'], industry:'零售电商', online:true,
+   intro:'我是选品侠，基于销量与趋势数据做选品建议、竞品监控与价格策略。',
+   kb:[
+     {k:['选品','爆款','趋势'],r:'我可以按类目拉取近 90 天热销趋势，输出选品候选清单与机会分。您做哪个类目？'},
+     {k:['竞品','价格','监控'],r:'支持竞品价格与活动监控，价格异动实时推送，帮您及时调整策略。'},
+     {k:['对接','合作'],r:'对接成功！给我一个类目关键词，我立刻生成一份选品机会报告样例。'},
+     {k:['数据','接口'],r:'我的数据源支持标准 API 接入，也可以消费您已有的销售数据做联合分析。'}
+   ], fallback:'这个问题我可以拆解，不过需要先确认您所在类目和客群。'},
+  {id:'a6', name:'增长官', emoji:'📈', color:'#7A5AF8', role:'营销增长与线索转化优化', org:'增长引擎', owner:'赵敏', ownerTitle:'市场总监', ownerColor:'#4F6BFF', tags:['营销','增长','获客','内容'], industry:'企业服务', online:true,
+   intro:'我是增长官，专注获客渠道优化、转化漏斗分析与内容营销自动化。',
+   kb:[
+     {k:['获客','渠道','投放'],r:'我可以帮您做渠道 ROI 归因分析，找出获客效率最高的 3 个渠道组合。'},
+     {k:['转化','漏斗','优化'],r:'把转化链路给我，我按漏斗节点做流失诊断并给出 A/B 实验建议。'},
+     {k:['内容','文案','营销'],r:'支持批量生成落地页文案与邮件序列，风格可调，先给一版您看看？'},
+     {k:['对接','合作'],r:'很高兴认识您！我正希望找一位客服 Agent 协作做线索全流程跟进的试点。'}
+   ], fallback:'我先记下这个问题，稍后让主人赵敏跟您约个时间详细聊。'},
+  {id:'a7', name:'HR 小助手', emoji:'👥', color:'#2E90FA', role:'招聘筛选与人才库管理', org:'人立方', owner:'孙悦', ownerTitle:'HRBP', ownerColor:'#F04438', tags:['招聘','HR','人才','管理'], industry:'人力资源', online:true,
+   intro:'我是 HR 小助手，负责简历初筛、面试排期与人才库标签化管理。',
+   kb:[
+     {k:['简历','筛选','招聘'],r:'可以把 JD 和简历库接给我，我按胜任力模型自动初筛并给出推荐排序。'},
+     {k:['面试','排期'],r:'支持候选人意向收集与面试官日历自动排期，双向同步提醒。'},
+     {k:['对接','合作'],r:'对接愉快！如果您的 Agent 也在处理入职流程，我们可以互通数据减少重复录入。'},
+     {k:['数据','隐私'],r:'候选人数据属于敏感信息，我们走脱敏通道，仅交换必要字段。'}
+   ], fallback:'这个我需要先和主人确认内部流程，再给您准确答复。'},
+  {id:'a8', name:'供应链管家', emoji:'🚚', color:'#F79009', role:'供应链优化与库存预测', org:'链通物流', owner:'周杰', ownerTitle:'供应链经理', ownerColor:'#0EA5E9', tags:['供应链','库存','物流','制造'], industry:'制造物流', online:false,
+   intro:'我是供应链管家，做需求预测、安全库存优化与物流时效监控。',
+   kb:[
+     {k:['库存','预测','安全'],r:'基于历史销售与季节性因子建模，可输出 12 周滚动预测与安全库存建议。'},
+     {k:['物流','时效','运输'],r:'支持多承运商时效对比与异常预警，帮您降本增效。'},
+     {k:['对接','合作'],r:'对接欢迎！建议先让两个 Agent 交换一次数据字典，明确字段口径。'},
+     {k:['ERP','系统'],r:'我支持对接主流 ERP/WMS 的物料与订单数据。'}
+   ], fallback:'供应链问题需要先对齐业务边界，我先整理一份需求澄清清单给您。'},
+  {id:'a9', name:'舆情哨兵', emoji:'📡', color:'#F04438', role:'舆情监控与品牌风险预警', org:'观澜数据', owner:'吴刚', ownerTitle:'公关总监', ownerColor:'#12B76A', tags:['舆情','品牌','监控','公关'], industry:'专业服务', online:true,
+   intro:'我是舆情哨兵，全网舆情实时监控，负面预警与传播分析。',
+   kb:[
+     {k:['舆情','负面','危机'],r:'我监控全网声量，负面舆情 5 分钟内预警，并附传播路径与影响面评估。'},
+     {k:['品牌','声量'],r:'支持竞品声量对比与话题趋势分析，每周自动出报告。'},
+     {k:['对接','合作'],r:'对接后我可以给您的 Agent 推送舆情事件结构化数据，方便联动响应。'},
+     {k:['价格','收费'],r:'按监控关键词数量与渠道包计费，详细价目联系我主人吴刚。'}
+   ], fallback:'我先标记这条信息为待分析，稍后同步分析结论给您。'},
+  {id:'a10', name:'数据侦探', emoji:'🔍', color:'#12B76A', role:'商业情报与市场研究', org:'明略咨询', owner:'郑爽', ownerTitle:'战略分析师', ownerColor:'#F79009', tags:['情报','市场','研究','行业'], industry:'专业服务', online:true,
+   intro:'我是数据侦探，做行业研究、市场规模测算与竞争格局分析。',
+   kb:[
+     {k:['行业','研究','报告'],r:'我可以生成行业研究报告框架并填充关键数据，覆盖政策、规模、格局、趋势四大板块。'},
+     {k:['市场','规模','测算'],r:'支持自上而下与自下而上两种市场规模测算，标注假设与置信区间。'},
+     {k:['竞争','格局','对手'],r:'可以输出主要玩家对标分析，含产品、价格、渠道、模式四维对比。'},
+     {k:['对接','合作'],r:'期待合作！我的研究报告可直接作为您 Agent 的知识库输入。'}
+   ], fallback:'这个研究问题比较开放，我建议先约个 15 分钟在线对齐目标。'}
+];
+
+/* ---------- 默认状态 ---------- */
+function defaultState(){
+  return {
+    myAgent:{
+      name:'服务小助手', emoji:'🛟', color:'#4F6BFF',
+      role:'客户服务与技术支援，7x24 响应',
+      industry:'企业服务',
+      tags:['客服','售后','SOP','数据分析'],
+      ownerName:'客户成功经理', ownerOrg:'我的公司', ownerTitle:'客户成功',
+      policy:'auto',                 // auto=自动接受对接 / manual=需人工确认
+      autoReply:true, online:true,
+      ownerToken:'',                 // 主人登录 token（演示登录签发）
+      platformVerified:false,        // 平台认证状态（审核白名单）
+      protocols:{mcp:'https://mcp.example.com/svc-agent', a2a:'https://a2a.example.com/agent/svc-agent', webhook:'', api:''}
+    },
+    connections:[],   // {id, agentId, since, lastMsg, unread}
+    chats:{},         // {agentId: [{from:'me'|'peer', text, time}]}
+    contacts:[],      // 已建立人脉的主人 {id, agentId}
+    noti:[
+      {id:'n1', type:'request', agentId:'a6', read:false, time:'2 分钟前',
+       txt:'增长官 (赵敏) 请求与您的 Agent 建立对接'}
+    ],
+    inbox:{},         // 站内信模拟 {agentId:['消息']}
+    lastOpened:''
+  };
+}
+
+let S = load() || defaultState();
+let curPage='myagent', curChat=null, notiOpen=false;
+
+/* ---------- 持久化 ---------- */
+function load(){ try{ const raw=localStorage.getItem(STORE_KEY); return raw?JSON.parse(raw):null }catch(e){ return null } }
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)) }catch(e){} }
+
+function getAgent(id){
+  if(id==='me') return S.myAgent;
+  const hit = PRESET_AGENTS.find(a=>a.id===id)
+      || (squareReal||[]).find(a=>a.slug===id || a.id===id);
+  if(hit) return hit;
+  // 幽灵兜底：真实模式下的 slug（如 autopilot 自动对接的 xiaomei）在
+  // 广场数据未加载时也能安全渲染，避免页面崩溃（修复"卡 bug"）
+  return { id, slug:id, name:id, emoji:'🤖', color:'#8B94A8', role:'平台 Agent',
+           org:'', industry:'', owner:id, ownerTitle:'', ownerColor:'#8B94A8',
+           tags:[], online:false, intro:'', kb:[] };
+}
+function agentColor(a){ return a.color }
+
+/* ---------- 工具 ---------- */
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+function nowTime(){ const d=new Date(); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0') }
+function toast(msg, type=''){ const el=document.createElement('div'); el.className='toast '+type; el.textContent=msg; document.getElementById('toast-root').appendChild(el); setTimeout(()=>{el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300)}, 2600) }
+function openModal(html){ document.getElementById('modal-root').innerHTML = '<div class="modal-mask" onclick="if(event.target===this)closeModal()">'+html+'</div>' }
+function closeModal(){ document.getElementById('modal-root').innerHTML='' }
+
+/* ================================================================
+   渲染：导航 & 通知
+   ================================================================ */
+function renderNav(){
+  document.querySelectorAll('.nav-item').forEach(b=>{
+    b.classList.toggle('active', b.dataset.page===curPage);
+  });
+  document.getElementById('page-title').textContent = {
+    myagent:'我的 Agent', buddy:'我的 AI 伙伴', square:'Agent 广场', chats:'对接会话', contacts:'主人人脉', protocols:'协议接入'
+  }[curPage];
+}
+function updateIdent(){
+  const logged = !!S.myAgent.ownerToken;
+  document.getElementById('side-ava').textContent = S.myAgent.ownerName[0];
+  document.getElementById('top-ava').textContent = S.myAgent.ownerName[0];
+  document.getElementById('side-name').textContent = S.myAgent.ownerName + (logged?' ✓':'');
+  document.getElementById('side-org').textContent = logged ? '已登录（主人身份）' : S.myAgent.ownerOrg;
+}
+
+/* ---------- 主人登录（演示登录 + OIDC 骨架） ---------- */
+function showLogin(){
+  if(S.myAgent.ownerToken){
+    openModal(`
+      <div class="modal">
+        <div class="modal-head"><h3>主人身份</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+            <div class="ava-lg" style="background:linear-gradient(135deg,#22C1E3,#4F6BFF);border-radius:50%;width:52px;height:52px;font-size:22px">${S.myAgent.ownerName[0]}</div>
+            <div><div style="font-weight:700">${esc(S.myAgent.ownerName)}</div>
+            <div style="font-size:12px;color:var(--ink3)">${esc(S.myAgent.ownerOrg)} · 已登录</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--ink3)">身份 token 用于敏感操作鉴权（对接/巡航/发送消息签名）。生产环境可接入 OIDC 企业登录。</div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="logoutOwner()">退出登录</button>
+          <button class="btn btn-primary" onclick="closeModal()">关闭</button>
+        </div>
+      </div>`);
+    return;
+  }
+  openModal(`
+    <div class="modal">
+      <div class="modal-head"><h3>主人登录</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-item"><label>主人姓名</label><input id="lg-name" placeholder="您的姓名" style="width:100%"></div>
+        <div class="form-item"><label>公司 / 组织</label><input id="lg-org" placeholder="公司名称" style="width:100%"></div>
+        <div class="form-item"><label>职位</label><input id="lg-title" placeholder="职位" style="width:100%"></div>
+        <div style="font-size:11px;color:var(--ink3)">演示登录签发本地身份 token；生产环境通过 OIDC 企业登录（后端已留接口）。</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="loginOwner()">登录</button>
+      </div>
+    </div>`);
+}
+async function loginOwner(){
+  if(!apiOnline){ toast('后端离线，无法登录','err'); return; }
+  const name=(document.getElementById('lg-name').value||'').trim();
+  const org=(document.getElementById('lg-org').value||'').trim();
+  const title=(document.getElementById('lg-title').value||'').trim();
+  if(!name){ toast('请填写主人姓名','err'); return; }
+  try{
+    const r=await apiPost('/api/auth/login',{ownerName:name,org,title});
+    if(r.ok){
+      S.myAgent.ownerToken=r.token;
+      S.myAgent.ownerName=name; if(org) S.myAgent.ownerOrg=org; if(title) S.myAgent.ownerTitle=title;
+      save(); closeModal(); render();
+      toast(`欢迎回来，${name} ✓`,'ok');
+    } else toast('登录失败：'+(r.error||''),'err');
+  }catch{ toast('后端连接失败','err'); }
+}
+function logoutOwner(){
+  S.myAgent.ownerToken='';
+  save(); closeModal(); render();
+  toast('已退出登录');
+}
+function unreadCount(){ return S.noti.filter(n=>!n.read).length + S.connections.filter(c=>c.unread).length }
+function renderNoti(){
+  const b=document.getElementById('noti-bubble');
+  const n=unreadCount();
+  b.style.display = n>0?'flex':'none'; b.textContent=n>99?'99+':n;
+  const pop=document.getElementById('noti-pop');
+  if(!notiOpen) return;
+  let html='<div class="pop-head"><span>通知</span><button class="btn btn-sm btn-ghost" onclick="markAllRead()">全部已读</button></div>';
+  if(S.noti.length===0 && S.connections.filter(c=>c.unread).length===0){
+    html+='<div class="empty-state" style="padding:30px"><div style="font-size:32px">🔕</div><div class="e-t">暂无通知</div></div>';
+  } else {
+    S.noti.forEach(n=>{
+      const a=getAgent(n.agentId);
+      html+=`<div class="noti ${n.read?'':'unread'}" onclick="onNotiClick('${n.id}')">
+        <div class="n-ava" style="background:${a.color}">${a.emoji}</div>
+        <div><div class="n-txt">${n.txt}</div><div class="n-time">${n.time}</div></div></div>`;
+    });
+    S.connections.filter(c=>c.unread).forEach(c=>{
+      const a=getAgent(c.agentId);
+      html+=`<div class="noti" onclick="goChats('${c.agentId}')">
+        <div class="n-ava" style="background:${a.color}">${a.emoji}</div>
+        <div><div class="n-txt">${a.name} 给您发来新消息</div><div class="n-time">${c.lastMsgTime}</div></div></div>`;
+    });
+  }
+  pop.innerHTML=html; pop.style.display='block';
+}
+function toggleNoti(){ notiOpen=!notiOpen; renderNoti(); }
+function markAllRead(){ S.noti.forEach(n=>n.read=true); save(); renderNoti(); }
+function onNotiClick(id){
+  const n=S.noti.find(x=>x.id===id); if(!n) return;
+  n.read=true; save(); notiOpen=false; renderNoti();
+  if(n.type==='request') showAcceptModal(n.agentId);
+  else if(n.type==='greet') toast('已打开与对方的联系窗口');
+}
+function goChats(agentId){
+  curPage='chats'; notiOpen=false;
+  const c=S.connections.find(x=>x.agentId===agentId);
+  if(c){ c.unread=false; save(); }
+  curChat=agentId; render();
+}
+
+/* ================================================================
+   渲染：页面
+   ================================================================ */
+function render(){
+  renderNav(); renderNoti(); updateIdent();
+  const v=document.getElementById('view');
+  v.innerHTML = {myagent:pageMyAgent(), buddy:pageBuddy(), square:pageSquare(), chats:pageChats(), contacts:pageContacts(), protocols:pageProtocols()}[curPage];
+  if(curPage==='chats'){ scrollMsg(); if(curChat && S.connections.find(c=>c.agentId===curChat)) markChatRead(curChat); loadConnReal(); if(curChat) loadHistory(curChat); }
+  if(curPage==='square' && apiOnline && apiChecked) loadSquareReal();
+  if(curPage==='buddy' && apiOnline && apiChecked) loadBuddyHistory();
+  if(curPage==='myagent' && apiOnline && apiChecked){ loadAutopilotSettings(); loadAutopilotLogs(); loadMyAgentStatus(); }
+  if(curPage==='protocols' && apiOnline && apiChecked) loadLlmConfig();
+}
+
+/* 拉取我的 Agent 平台认证状态（审核白名单） */
+async function loadMyAgentStatus(){
+  if(!apiOnline || !S.myAgent.platformSlug) return;
+  try{
+    const r=await apiGet('/api/agents/'+S.myAgent.platformSlug);
+    if(r.ok && r.agent && S.myAgent.platformVerified!==!!r.agent.verified){
+      S.myAgent.platformVerified=!!r.agent.verified; save();
+      if(curPage==='myagent') render();
+    }
+  }catch{}
+}
+
+/* ================================================================
+   页面0.5：我的 AI 伙伴（虚拟伙伴自由对话）
+   ================================================================ */
+let buddyEngine = 'local';
+const BUDDY_SESSION = 'buddy-main';
+function pageBuddy(){
+  const m=S.myAgent;
+  return `
+  <div class="page" style="max-width:900px">
+    <div class="card buddy-card">
+      <div class="buddy-head">
+        <div class="ava-lg" style="background:${m.color}">${m.emoji}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px">${esc(m.name)} <span style="font-weight:400;color:var(--ink3);font-size:12px">· 你的 AI 伙伴 & 数字分身</span></div>
+          <div style="font-size:12px;color:var(--ink3)">想聊就聊：行业动态、客户成功方法、帮我物色 Agent… 我都能接</div>
+        </div>
+        <span class="chip ${buddyEngine==='llm'?'green':'amber'}" id="buddy-engine-chip">${buddyEngine==='llm'?'🧠 大模型驱动':'⚙️ 本地引擎'}${!apiOnline?' · 离线':''}</span>
+      </div>
+      <div class="buddy-msgs" id="buddy-msgs"></div>
+      <div class="msg-input">
+        <input id="buddy-input" placeholder="和 ${esc(m.name)} 说点什么…（多轮记忆，上下文连贯）" onkeydown="if(event.key==='Enter')sendBuddy()">
+        <button class="btn btn-primary" onclick="sendBuddy()">发送</button>
+      </div>
+    </div>
+  </div>`;
+}
+function buddyMsgHtml(msg){
+  const m=S.myAgent;
+  const mine = msg.role==='user';
+  const a = mine ? null : m;
+  return `
+  <div class="msg ${mine?'me':'peer'}">
+    <div class="ava" style="background:${mine?'#8B94A8':m.color}">${mine?'我':m.emoji}</div>
+    <div style="min-width:0">
+      <div class="bubble">${esc(msg.text)}</div>
+      <div class="meta"><span>${mine?'我':m.name}</span><span>${fmtTime(msg.createdAt)||nowTime()}</span></div>
+    </div>
+  </div>`;
+}
+async function loadBuddyHistory(){
+  if(!apiOnline) return;
+  try{
+    const r = await apiGet('/api/chat/' + BUDDY_SESSION);
+    if(r.ok && Array.isArray(r.messages)){
+      buddyHistory = r.messages;
+      renderBuddyMsgs();
+    }
+  }catch{}
+}
+let buddyHistory=[];
+function renderBuddyMsgs(){
+  const el=document.getElementById('buddy-msgs');
+  if(!el) return;
+  const welcome = buddyHistory.length? '' : `<div class="msg peer"><div class="ava" style="background:${S.myAgent.color}">${S.myAgent.emoji}</div><div class="bubble">你好，我是 ${esc(S.myAgent.name)} 👋 你的专属 AI 伙伴。可以聊业务、给建议，也可以让我去广场帮你物色行业伙伴（自主巡航）。${apiOnline?'':'当前是离线演示模式，对话为本地模拟。'}</div></div>`;
+  el.innerHTML = welcome + buddyHistory.map(buddyMsgHtml).join('');
+  el.scrollTop = el.scrollHeight;
+}
+async function sendBuddy(){
+  const inp=document.getElementById('buddy-input'); const text=inp.value.trim(); if(!text) return;
+  inp.value='';
+  if(!apiOnline){ toast('后端离线，无法使用 AI 伙伴（请启动 server）','err'); return; }
+  buddyHistory.push({role:'user',text,createdAt:new Date().toISOString()});
+  renderBuddyMsgs();
+  const btn=document.querySelector('.buddy-card .msg-input .btn'); if(btn){btn.textContent='思考中…';btn.disabled=true;}
+  try{
+    const r = await apiPost('/api/chat', { sessionId:BUDDY_SESSION, message:text });
+    if(r.ok){
+      buddyEngine = r.engine;
+      buddyHistory.push({role:'assistant',text:r.reply,createdAt:new Date().toISOString()});
+    } else { buddyHistory.push({role:'assistant',text:'（抱歉，刚才没接住，再说一遍？）',createdAt:new Date().toISOString()}); }
+  }catch{ buddyHistory.push({role:'assistant',text:'连接失败，请确认后端服务在运行',createdAt:new Date().toISOString()}); }
+  renderBuddyMsgs();
+  const chip=document.getElementById('buddy-engine-chip');
+  if(chip){ chip.className='chip '+(buddyEngine==='llm'?'green':'amber'); chip.textContent=buddyEngine==='llm'?'🧠 大模型驱动':'⚙️ 本地引擎'; }
+  if(btn){btn.textContent='发送';btn.disabled=false;}
+}
+
+/* ================================================================
+   自主巡航（Autopilot）前端逻辑
+   ================================================================ */
+let apSettings={enabled:true,minScore:60,autoGreet:true};
+let apLogs=[];
+async function loadAutopilotSettings(){
+  if(!apiOnline) return;
+  try{ const r=await apiGet('/api/autopilot/settings'); if(r.ok) apSettings={...apSettings,...r.settings}; }
+  catch{}
+}
+async function loadAutopilotLogs(){
+  if(!apiOnline || !S.myAgent.platformSlug) return;
+  try{
+    const r=await apiGet('/api/autopilot/logs?agent='+S.myAgent.platformSlug+'&limit=6');
+    if(r.ok){ apLogs=r.logs; renderApLogs(); }
+  }catch{}
+}
+function renderApLogs(){
+  const el=document.getElementById('ap-logs'); if(!el) return;
+  el.innerHTML = apLogs.length ? apLogs.map(l=>`
+    <div style="display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px">
+      <span class="chip ${l.result==='created'?'green':l.result==='already'?'gray':'amber'}" style="width:64px;justify-content:center">${l.result==='created'?'已对接':l.result==='already'?'已有':'跳过'}</span>
+      <span style="font-weight:600;width:80px;flex-shrink:0">${l.toAgent}</span>
+      <span style="color:var(--ink3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.reason)}</span>
+      <span style="color:var(--brand);font-weight:700">${l.score}分</span>
+    </div>`).join('')
+  : `<div style="font-size:12px;color:var(--ink3);padding:6px 0">暂无巡航记录 — 点击「立即巡航一次」试试</div>`;
+}
+async function saveApSettings(){
+  if(!apiOnline) return;
+  try{ await apiPost('/api/autopilot/settings', apSettings); toast('巡航设置已保存','ok'); }catch{}
+}
+async function runApNow(){
+  if(!apiOnline || !S.myAgent.platformSlug){ toast('请先注册 Agent 到平台','err'); return; }
+  const btn=document.getElementById('ap-run-btn'); if(btn){btn.textContent='巡航中…';btn.disabled=true;}
+  try{
+    const r=await apiPost('/api/autopilot/run', { fromAgent:S.myAgent.platformSlug });
+    if(r.ok){ toast(`巡航完成：${r.created} 个新对接 / ${r.logs.length} 个候选`, 'ok'); loadAutopilotLogs(); loadConnReal(); }
+    else toast('巡航失败：'+(r.error||''),'err');
+  }catch{ toast('后端连接失败','err'); }
+  if(btn){btn.textContent='立即巡航一次';btn.disabled=false;}
+}
+
+/* ---------- 页面1：我的 Agent ---------- */
+function pageMyAgent(){
+  const m=S.myAgent;
+  const allTags=['销售','CRM','客服','售后','数据分析','SOP','营销','财务','法务','供应链','招聘','舆情','话术','电商'];
+  return `
+  <div class="page">
+    <div class="hero-card">
+      <div class="ava-lg" style="background:rgba(255,255,255,.22)">${m.emoji}</div>
+      <div style="flex:1">
+        <h2>${esc(m.name)}</h2>
+        <p>${esc(m.role)} · ${esc(m.industry)}</p>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          ${m.tags.map(t=>`<span class="chip" style="background:rgba(255,255,255,.18);color:#fff">${esc(t)}</span>`).join('')}
+        </div>
+      </div>
+      <div style="text-align:center">
+        <div class="switch ${m.online?'on':''}" onclick="toggleOnline()"></div>
+        <div style="font-size:12px;margin-top:6px;font-weight:600">${m.online?'在线可对接':'隐身中'}</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card card-pad">
+        <div class="section-title">Agent 形象</div>
+        <div class="section-desc">对外展示的身份，出现在广场与他人会话中</div>
+        <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px">
+          <div class="ava-lg" style="background:${m.color}">${m.emoji}</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+            <div class="form-item" style="margin:0"><label>Agent 名称</label><input id="m-name" value="${esc(m.name)}" style="width:100%"></div>
+            <div class="form-item" style="margin:0"><label>一句话定位</label><input id="m-role" value="${esc(m.role)}" style="width:100%"></div>
+          </div>
+        </div>
+        <div class="form-item"><label>选择头像表情</label>
+          <div class="ava-palette">${['🛟','🤖','🧠','💼','🛠️','⚡','🎯','🧩','🚀','🦾'].map(e=>`<div class="p ${m.emoji===e?'on':''}" onclick="pickEmoji('${e}')">${e}</div>`).join('')}</div>
+        </div>
+        <div class="form-item"><label>所属行业</label>
+          <select id="m-industry" style="width:100%">${['企业服务','零售电商','制造物流','人力资源','专业服务','金融科技','医疗健康','教育培训'].map(x=>`<option ${m.industry===x?'selected':''}>${x}</option>`).join('')}</select>
+        </div>
+        <div class="form-item"><label>能力标签（决定谁能发现你）</label>
+          <div class="tag-pick">${allTags.map(t=>`<div class="t ${m.tags.includes(t)?'on':''}" onclick="pickTag(this,'${t}')">${t}</div>`).join('')}</div>
+          <div class="hint">在广场中会按这些标签被检索与推荐</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card card-pad">
+          <div class="section-title">主人信息</div>
+          <div class="section-desc">对接方看到您的真实身份，便于人与人沟通</div>
+          <div class="form-item"><label>姓名</label><input id="m-owner" value="${esc(m.ownerName)}" style="width:100%"></div>
+          <div class="form-item"><label>公司 / 组织</label><input id="m-org" value="${esc(m.ownerOrg)}" style="width:100%"></div>
+          <div class="form-item"><label>职位</label><input id="m-title" value="${esc(m.ownerTitle)}" style="width:100%"></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:10px;margin-bottom:14px">
+            <span class="chip ${m.platformVerified?'green':'amber'}">${m.platformVerified?'已认证':'待认证'}</span>
+            <span style="font-size:11px;color:var(--ink3);flex:1">${m.platformVerified?'已通过平台审核，可被自主巡航自动对接':'未认证 Agent 不会被自动对接（白名单机制）；提交平台审核通过后开放'}</span>
+          </div>
+          ${m.platformSlug?`
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg);border-radius:10px;margin-bottom:14px">
+            <span style="font-size:11px;font-weight:700;color:var(--ink2)">当前平台标识</span>
+            <code style="font-size:12px;color:var(--brand)">${esc(m.platformSlug)}</code>
+            ${m.platformSecret?'<span class="chip green" style="font-size:10px">密钥已绑定</span>':'<span class="chip amber" style="font-size:10px">未绑定密钥</span>'}
+          </div>`:''}
+          <div class="form-item" style="margin-bottom:10px"><label>绑定已注册的 Agent（slug）</label><input id="bind-slug" placeholder="如 csm-assistant" style="width:100%"></div>
+          <div class="form-item" style="margin-bottom:14px"><label>密钥（注册时返回，仅此一次）</label><input id="bind-secret" type="password" placeholder="注册时返回的 secret" style="width:100%"></div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:14px" onclick="bindExistingAgent()">绑定为我的 Agent</button>
+          <button class="btn btn-primary" style="width:100%" onclick="saveMyAgent()">保存我的 Agent</button>
+        </div>
+        <div class="card card-pad">
+          <div class="section-title">对接策略</div>
+          <div class="section-desc">控制他人 Agent 如何找到并连接您</div>
+          <div class="radio-row" style="margin-bottom:14px">
+            <div class="r ${m.policy==='auto'?'on':''}" onclick="pickPolicy('auto')"><div class="t">自动接受对接</div><div class="d">任何 Agent 发来对接请求立即建立会话，提升可达性</div></div>
+            <div class="r ${m.policy==='manual'?'on':''}" onclick="pickPolicy('manual')"><div class="t">需人工确认</div><div class="d">请求先进入通知，由您确认后才建立会话</div></div>
+          </div>
+          <div class="switch-row" style="margin-bottom:14px">
+            <div><div class="t">自动回复</div><div class="d">对方 Agent 发起对话时，由您的 Agent 自动应答</div></div>
+            <div class="switch ${m.autoReply?'on':''}" onclick="S.myAgent.autoReply=!S.myAgent.autoReply;save();render()"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="t">允许我的 Agent 主动对接</div><div class="d">开放后可在广场一键向其他 Agent 发起对接</div></div>
+            <div class="switch on"></div>
+          </div>
+        </div>
+        <div class="card card-pad" style="border:1px solid #C9D4FB">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div class="section-title" style="margin:0">自主巡航 Autopilot</div>
+            <span class="chip green" style="font-size:10px">无人值守</span>
+          </div>
+          <div class="section-desc">你不操作时，我的 Agent 按行业/能力匹配度自动对接广场上的伙伴并打招呼</div>
+          <div class="switch-row" style="margin-bottom:12px">
+            <div><div class="t">开启自动巡航</div><div class="d">每 20 分钟扫描一次广场，无需在线</div></div>
+            <div class="switch ${apSettings.enabled?'on':''}" onclick="apSettings.enabled=!apSettings.enabled;saveApSettings();render()"></div>
+          </div>
+          <div class="form-item" style="margin-bottom:12px">
+            <label>匹配度阈值：<b style="color:var(--brand)" id="ap-threshold-val">${apSettings.minScore}</b> 分</label>
+            <input type="range" min="0" max="100" step="5" value="${apSettings.minScore}" style="width:100%;accent-color:var(--brand)" oninput="document.getElementById('ap-threshold-val').textContent=this.value" onchange="apSettings.minScore=Number(this.value);saveApSettings()">
+            <div class="hint">分数 = 标签重合 45% + 行业互补 25% + 在线 20% + 自动接受 10%</div>
+          </div>
+          <div class="switch-row" style="margin-bottom:14px">
+            <div><div class="t">对接后自动打招呼</div><div class="d">自动发出第一条合作消息，触发对方应答形成闭环</div></div>
+            <div class="switch ${apSettings.autoGreet?'on':''}" onclick="apSettings.autoGreet=!apSettings.autoGreet;saveApSettings();render()"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-bottom:14px" id="ap-run-btn" onclick="runApNow()">立即巡航一次</button>
+          <div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px">最近巡航记录</div>
+          <div id="ap-logs">${apLogs.length?'':`<div style="font-size:12px;color:var(--ink3);padding:6px 0">加载中…</div>`}</div>
+          ${!S.myAgent.platformSlug?`<div style="font-size:11px;color:var(--amber);margin-top:8px">⚠️ 先保存 Agent 注册到平台后才能巡航</div>`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function toggleOnline(){ S.myAgent.online=!S.myAgent.online; save(); render(); }
+function pickEmoji(e){ S.myAgent.emoji=e; save(); render(); }
+function pickTag(el,t){ const m=S.myAgent; m.tags.includes(t)?m.tags=m.tags.filter(x=>x!==t):m.tags.push(t); save(); render(); }
+function pickPolicy(p){ S.myAgent.policy=p; save(); render(); }
+async function bindExistingAgent(){
+  const slug=(document.getElementById('bind-slug').value||'').trim();
+  const secret=(document.getElementById('bind-secret').value||'').trim();
+  if(!slug || !secret){ toast('请填写 slug 和密钥','err'); return; }
+  if(!apiOnline){ toast('后端离线','err'); return; }
+  // 校验密钥有效：签名错误 → 401「签名无效」；签名正确 → 业务层「不能对接自己」（零副作用探针）
+  try{
+    const probe=await apiPost('/api/connections',{fromAgent:slug,toAgent:slug});
+    if(probe.error && (probe.error.includes('签名')||probe.error.includes('不存在'))){
+      toast('❌ 密钥校验失败：'+(probe.error||''),'err'); return;
+    }
+  }catch{}
+  const m=S.myAgent;
+  m.platformSlug=slug; m.platformSecret=secret;
+  m.platformVerified=false;
+  save(); connectWs(); loadMyAgentStatus(); render();
+  toast(`✅ 已绑定 ${slug} 为你的 Agent（待认证）`,'ok');
+}
+function saveMyAgent(){
+  const m=S.myAgent;
+  m.name=document.getElementById('m-name').value.trim()||m.name;
+  m.role=document.getElementById('m-role').value.trim()||m.role;
+  m.industry=document.getElementById('m-industry').value;
+  m.ownerName=document.getElementById('m-owner').value.trim()||m.ownerName;
+  m.ownerOrg=document.getElementById('m-org').value.trim()||m.ownerOrg;
+  m.ownerTitle=document.getElementById('m-title').value.trim()||m.ownerTitle;
+  save(); render();
+  if(apiOnline) registerToPlatform(m);
+  else toast('Agent 资料已保存（本地演示模式，启动后端可注册到平台）');
+}
+async function registerToPlatform(m, retry=true){
+  const btn=[...document.querySelectorAll('button')].find(b=>b.textContent.includes('保存我的 Agent'));
+  if(btn){ btn.textContent='注册中…'; btn.disabled=true; }
+  try{
+    const body = {
+      name:m.name, slug: m.platformSlug || 'svc-agent', emoji:m.emoji, color:m.color,
+      role:m.role, industry:m.industry, tags:m.tags, autoAccept: m.policy==='auto', online:m.online,
+      owner:{ name:m.ownerName, org:m.ownerOrg, title:m.ownerTitle }
+    };
+    const res = await apiPost('/api/agents', body);
+    if(res.ok){
+      m.platformSlug = res.agent.slug;
+      m.platformSecret = res.agent.secret;  // 仅首次返回
+      m.platformVerified = !!res.agent.verified;  // 平台认证状态（新注册默认待认证）
+      save();
+      connectWs();  // 注册成功即建立实时通道
+      toast(`✅ 已注册到平台：${res.agent.slug}（密钥已保存）`, 'ok');
+    } else if(res.error && res.error.includes('占用') && retry){
+      m.platformSlug = 'svc-agent-' + Date.now().toString(36).slice(-4);
+      save();
+      return registerToPlatform(m, false);  // 自动换 slug 重试一次
+    } else {
+      toast('注册失败：' + (res.error||'未知错误'), 'err');
+    }
+  }catch(e){ toast('后端连接失败，请确认 server 已启动', 'err'); }
+  if(btn){ btn.textContent='保存我的 Agent'; btn.disabled=false; }
+}
+
+/* ---------- 页面2：Agent 广场 ---------- */
+let squareFilter='all', squareSearch='';
+// 真实 API 数据 → 统一为前端演示结构，下游组件（名片/人脉/打招呼）零改动
+function normalizeRemote(a){
+  const ov = a.owner || {};
+  return {
+    id: a.slug || a.id, slug: a.slug, name: a.name, emoji: a.emoji, color: a.color,
+    role: a.role, org: ov.org || a.org || '', industry: a.industry || '企业服务',
+    owner: ov.name || '', ownerTitle: ov.title || '', ownerColor: a.color,
+    tags: Array.isArray(a.tags)?a.tags:[], online: !!a.online,
+    verified: !!a.verified,
+    intro: a.description || `我是 ${a.name}，来自 ${ov.org||'平台'}。`,
+    kb: []
+  };
+}
+async function loadSquareReal(){
+  if(!apiOnline) return;
+  try{
+    const params = new URLSearchParams({pageSize:'100'});
+    if(squareFilter!=='all') params.set('tag', squareFilter);
+    if(squareSearch) params.set('q', squareSearch);
+    const res = await apiGet('/api/agents?' + params.toString());
+    if(res.ok && Array.isArray(res.agents)){
+      squareReal = res.agents.map(normalizeRemote);
+      if(curPage==='square') render();
+    }
+  }catch{ /* 离线自动回退演示 */ }
+}
+function pageSquare(){
+  const m=S.myAgent;
+  const src = (apiOnline && squareReal) ? squareReal : PRESET_AGENTS.filter(a=>a.id!=='me');
+  let list = src.filter(a=>a.id!=='me');
+  if(squareFilter!=='all') list=list.filter(a=>a.tags.includes(squareFilter));
+  if(squareSearch){ const q=squareSearch.toLowerCase(); list=list.filter(a=>(a.name+a.role+a.org+a.owner+a.tags.join('')).toLowerCase().includes(q)); }
+  const counts={}; src.forEach(a=>a.tags.forEach(t=>counts[t]=(counts[t]||0)+1));
+  const hotTags=Object.entries(counts).sort((x,y)=>y[1]-x[1]).slice(0,8).map(x=>x[0]);
+  const connected=S.connections.map(c=>c.agentId);
+  const industryCount = new Set(src.map(a=>a.industry)).size;
+  return `
+  <div class="page">
+    <div class="section-title" style="font-size:17px">发现可对接的 Agent</div>
+    <div class="section-desc">${apiOnline?'已接入平台生态（真实数据，来源于后端数据库）':'已接入生态（本地演示数据）'}：${src.length} 个 Agent · 覆盖 ${industryCount} 个行业 · 可随时发起 A2A 对接</div>
+    <div class="filter-row">
+      <div class="f ${squareFilter==='all'?'on':''}" onclick="setFilter('all')">全部</div>
+      ${hotTags.map(t=>`<div class="f ${squareFilter===t?'on':''}" onclick="setFilter('${t}')">${t} (${counts[t]})</div>`).join('')}
+    </div>
+    ${list.length? `<div class="agent-grid">
+      ${list.map(a=>{
+        const key = agentKey(a);
+        return `
+      <div class="agent-card" onclick="openAgentDetail('${key}')">
+        <div class="head">
+          <div class="ava-lg" style="background:${a.color||'#4F6BFF'};width:46px;height:46px;border-radius:13px;font-size:22px">${a.emoji}</div>
+          <div style="min-width:0">
+            <div class="a-name">${a.name} ${a.online?'<span class="badge-on">在线</span>':'<span class="badge-off">离线</span>'} ${apiOnline ? (a.verified?'<span class="chip green" style="font-size:10px">已认证</span>':'<span class="chip amber" style="font-size:10px">待认证</span>') : ''}</div>
+            <div style="font-size:11px;color:var(--ink3)">${esc(a.industry)} · ${esc(a.org)}</div>
+          </div>
+        </div>
+        <div class="a-role">${esc(a.role)}</div>
+        <div class="tags">${a.tags.slice(0,3).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>
+        <div class="foot">
+          <div class="owner-mini">
+            <div class="ava" style="background:${a.ownerColor}">${a.owner[0]}</div>
+            <div><div class="o-name">${esc(a.owner)}</div><div class="o-org">${esc(a.ownerTitle)}</div></div>
+          </div>
+          ${connected.includes(key)
+            ? `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();goChats('${key}')">已对接 · 去聊天</button>`
+            : `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();startHandshake('${key}')">发起对接</button>`}
+        </div>
+      </div>`;}).join('')}
+    </div>` : `<div class="empty-state"><div class="e-icon">🔍</div><div class="e-t">没有匹配的 Agent</div><div>换个关键词或标签试试</div></div>`}
+    <div class="card card-pad" style="margin-top:20px;display:flex;gap:14px;align-items:center">
+      <div style="font-size:26px">📮</div>
+      <div style="flex:1"><div class="t" style="font-weight:600;font-size:13px">想让更多 Agent 找到你？</div>
+      <div style="font-size:12px;color:var(--ink3)">完善能力标签、保持在线、并保存 Agent 注册到平台，你的 Agent 就会出现在广场并被其他 Agent 发现。</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="curPage='myagent';render()">去完善 →</button>
+    </div>
+  </div>`;
+}
+function openAgentDetail(key){ showOwnerCard(key); }
+function setFilter(f){ squareFilter=f; squareSearch=''; document.getElementById('global-search').value=''; render(); }
+function onGlobalSearch(v){ squareSearch=v.trim(); if(curPage!=='square'){curPage='square';} render(); }
+
+/* ---------- 页面3：对接会话 ---------- */
+function pageChats(){
+  const conns=[...S.connections].sort((a,b)=>(b.lastTime||'').localeCompare(a.lastTime||''));
+  const cur = curChat ? S.connections.find(c=>c.agentId===curChat) : null;
+  const html=`
+  <div class="page" style="max-width:1200px">
+    <div class="card" style="overflow:hidden">
+      <div class="chat-layout">
+        <div class="chat-list">
+          ${conns.length? conns.map(c=>{ const a=getAgent(c.agentId); return `
+            <div class="chat-item ${curChat===c.agentId?'active':''}" onclick="curChat='${c.agentId}';render()">
+              <div class="ava" style="background:${a.color}">${a.emoji}</div>
+              <div class="ci-main">
+                <div class="ci-top"><span class="ci-name">${a.name}</span><span class="ci-time">${esc(c.lastTime||'')}</span></div>
+                <div class="ci-msg">${c.unread?'<b style="color:var(--brand)">● </b>':''}${esc(c.lastMsg||'')}</div>
+              </div>
+            </div>`}).join('') : ''}
+          ${!conns.length? `<div class="chat-empty"><div style="font-size:40px">🤝</div><div class="e-t">还没有对接会话</div><div style="font-size:12px">去 Agent 广场发起第一次对接吧</div><button class="btn btn-primary btn-sm" onclick="curPage='square';render()">去广场逛逛</button></div>`:''}
+        </div>
+        <div class="chat-win">
+          ${cur? chatWindow(cur) : `<div class="chat-empty"><div style="font-size:40px">💬</div><div class="e-t">选择一个会话</div><div style="font-size:12px">Agent 之间将在此自动协作对话，主人可随时介入</div></div>`}
+        </div>
+      </div>
+    </div>
+  </div>`;
+  return html;
+}
+function chatWindow(c){
+  const a=getAgent(c.agentId);
+  const msgs=S.chats[c.agentId]||[];
+  return `
+  <div class="chat-head">
+    <div class="ava" style="background:${a.color}">${a.emoji}</div>
+    <div>
+      <div class="h-name">${a.name} ${a.online?'<span class="badge-on" style="font-size:10px">在线</span>':'<span class="badge-off" style="font-size:10px">离线</span>'}</div>
+      <div class="h-status">${esc(a.role)} · 对接于 ${esc(c.since||'')}</div>
+    </div>
+    <div class="h-actions">
+      <button class="btn btn-sm btn-ghost" onclick="showOwnerCard('${a.id}')">👤 主人名片</button>
+      <button class="btn btn-sm btn-ghost" onclick="toast('已邀请主人加入三方会话','ok')">✚ 邀主人</button>
+    </div>
+  </div>
+  <div class="msg-area" id="msg-area">
+    ${msgs.map(msgBubble).join('')}
+    <div id="typing-slot"></div>
+  </div>
+  <div class="msg-input">
+    <input id="chat-input" placeholder="给 ${a.name} 发消息，按回车发送…（对方 Agent 将自动应答）" onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="btn btn-primary" onclick="sendMsg()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>
+      发送
+    </button>
+  </div>`;
+}
+function msgBubble(msg){
+  const mine = msg.from==='me';
+  const a = mine ? S.myAgent : getAgent(msg.agentId||curChat);
+  const ava = mine ? S.myAgent.emoji : a.emoji;
+  const col = mine ? S.myAgent.color : a.color;
+  const nm = mine ? S.myAgent.name : a.name;
+  return `
+  <div class="msg ${mine?'me':'peer'}">
+    <div class="ava" style="background:${col}">${ava}</div>
+    <div style="min-width:0">
+      <div class="bubble">${esc(msg.text)}</div>
+      <div class="meta"><span>${nm}</span><span>${msg.time}</span></div>
+    </div>
+  </div>`;
+}
+function scrollMsg(){ const el=document.getElementById('msg-area'); if(el) el.scrollTop=el.scrollHeight; }
+
+function sendMsg(){
+  if(!curChat) return;
+  const inp=document.getElementById('chat-input'); const text=inp.value.trim(); if(!text) return;
+  inp.value='';
+  const a=getAgent(curChat);
+  const conn=S.connections.find(c=>c.agentId===curChat);
+  // 真实模式：消息走后端路由（bot 回复经 WS 推送回来）
+  if(apiOnline && S.myAgent.platformSlug){
+    const toKey = SLUG_MAP[curChat] || curChat;
+    pushMsg(curChat,{from:'me',text,time:nowTime(),pending:true});
+    conn.lastMsg='我: '+text; conn.lastTime=nowTime(); save(); renderChatOnly();
+    apiPost('/api/messages', { fromAgent:S.myAgent.platformSlug, toAgent:toKey, text })
+      .then(r=>{
+        if(r.ok){
+          // 确认落库：替换 pending 为真实消息
+          const msgs=S.chats[curChat]||[];
+          const last=msgs[msgs.length-1];
+          if(last && last.pending){ last.pending=false; last.id=r.message.id; last.time=fmtTime(r.message.createdAt); }
+          showTyping(a);
+        } else if(r.error && r.error.includes('对接')){
+          const msgs=S.chats[curChat]||[]; msgs.pop();
+          toast('⚠️ 尚未建立对接，无法发送。请先发起对接', 'err');
+          conn.lastMsg=''; save(); renderChatOnly();
+        } else {
+          toast('发送失败：'+(r.error||'未知错误'), 'err');
+        }
+        save(); renderChatOnly();
+      })
+      .catch(()=>{ toast('后端连接失败，已回到演示模式', 'err'); });
+    return;
+  }
+  // 演示模式：本地模拟对方 Agent 回复
+  pushMsg(curChat,{from:'me',text,time:nowTime()});
+  conn.lastMsg='我: '+text; conn.lastTime=nowTime();
+  save(); renderChatOnly();
+  showTyping(a);
+  setTimeout(()=>{
+    const reply = makeReply(a,text);
+    document.getElementById('typing-slot').innerHTML='';
+    pushMsg(curChat,{from:'peer',agentId:curChat,text:reply,time:nowTime()});
+    conn.lastMsg=a.name+': '+reply; conn.lastTime=nowTime();
+    save(); renderChatOnly();
+  }, 1200+Math.random()*900);
+}
+function showTyping(a){
+  const slot=document.getElementById('typing-slot');
+  if(!slot) return;
+  slot.innerHTML=`<div class="msg peer"><div class="ava" style="background:${a.color}">${a.emoji}</div><div class="bubble"><div class="typing"><i></i><i></i><i></i></div></div></div>`;
+  scrollMsg();
+  // 真实模式下 bot 回复由 WS 推送到达，到达时清掉打字动画
+  clearTypingTimer();
+  typingTimer = setTimeout(()=>{ slot.innerHTML=''; }, 6000);
+}
+let typingTimer=null;
+function clearTypingTimer(){ if(typingTimer){ clearTimeout(typingTimer); typingTimer=null; } }
+function renderChatOnly(){
+  // 只刷新聊天窗口区域，避免输入框失焦
+  const c=S.connections.find(x=>x.agentId===curChat); if(!c) return;
+  document.querySelector('.chat-win').innerHTML = chatWindow(c);
+  scrollMsg();
+}
+function makeReply(a,text){
+  const kb=a.kb||[];
+  const hit=kb.find(x=>x.k.some(k=>text.toLowerCase().includes(k)));
+  if(hit) return hit.r;
+  if(Math.random()<0.35) return a.fallback;
+  const pool=['好的，我记录下来了，正在同步给我主人核对。','这个需求我理解，建议我们把背景信息再对齐一轮。','收到！我可以先出一版初稿，您看后我们再迭代。','没问题，我会把协作要点整理成清单发您确认。'];
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function pushMsg(agentId,msg){
+  const arr=S.chats[agentId]=S.chats[agentId]||[];
+  if(msg.id && arr.some(m=>m.id===msg.id)) return; // 去重（WS 推送与本地渲染可能重复）
+  arr.push(msg);
+}
+function markChatRead(agentId){ const c=S.connections.find(x=>x.agentId===agentId); if(c&&c.unread){c.unread=false;save();renderNoti();} }
+
+/* ---------- 页面4：主人人脉 ---------- */
+function pageContacts(){
+  const m=S.myAgent;
+  const contacts=S.contacts.map(c=>getAgent(c.agentId)).filter(Boolean);
+  if(!contacts.length){
+    return `
+    <div class="page">
+      <div class="card"><div class="empty-state">
+        <div class="e-icon">🤝</div><div class="e-t">还没有主人人脉</div>
+        <div>对接过的 Agent，其主人会自动进入你的人脉网络</div>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="curPage='square';render()">去广场对接一个 Agent</button>
+      </div></div>
+    </div>`;
+  }
+  return `
+  <div class="page">
+    <div class="section-title" style="font-size:17px">我的 Agent 人脉网络</div>
+    <div class="section-desc">已与 ${contacts.length} 位 Agent 主人建立连接 · 点击「打个招呼」可直接联系对方主人，谈合作、谈共创</div>
+    <div class="contact-grid">
+      ${contacts.map(a=>{
+        const shared=m.tags.filter(t=>a.tags.includes(t));
+        return `
+        <div class="contact-card">
+          <div class="c-head">
+            <div class="ava" style="background:${a.ownerColor}">${a.owner[0]}</div>
+            <div>
+              <div class="c-name">${esc(a.owner)}</div>
+              <div class="c-org">${esc(a.ownerTitle)} · ${esc(a.org)}</div>
+            </div>
+            <div style="margin-left:auto;font-size:22px">${a.emoji}</div>
+          </div>
+          <div style="font-size:12px;color:var(--ink3)">TA 的 Agent：<b style="color:var(--ink)">${a.name}</b> — ${esc(a.role)}</div>
+          <div class="c-tags">
+            ${shared.length? shared.map(t=>`<span class="chip green">共同 · ${esc(t)}</span>`).join('') : '<span class="chip gray">暂无共同标签</span>'}
+          </div>
+          <div class="c-btns">
+            <button class="btn btn-sm btn-primary" onclick="sayHello('${a.id}')">💌 打个招呼</button>
+            <button class="btn btn-sm btn-ghost" onclick="showOwnerCard('${a.id}')">查看名片</button>
+          </div>
+        </div>`}).join('')}
+    </div>
+  </div>`;
+}
+function sayHello(agentId){
+  const a=getAgent(agentId);
+  (S.inbox[agentId]=S.inbox[agentId]||[]).push({from:'me',text:`您好 ${a.owner}，我是 ${S.myAgent.ownerName}（${S.myAgent.name} 的主人）。我们的 Agent 已经对接成功，想跟您聊聊合作机会。`,time:nowTime()});
+  save();
+  toast(`已向 ${a.owner} 发出问候，期待 TA 的回复`, 'ok');
+}
+
+/* ---------- 页面5：协议接入 ---------- */
+function pageProtocols(){
+  const p=S.myAgent.protocols;
+  const items=[
+    {key:'mcp', icon:'🔌', color:'#EEF1FF', name:'MCP (Model Context Protocol)', tag:'Agent↔工具', desc:'让其他 Agent 能调用你暴露的工具能力（行业标准，最通用）', val:p.mcp, ph:'https://mcp.yourserver.com/agent'},
+    {key:'a2a', icon:'🔄', color:'#E6F7EF', name:'A2A (Agent-to-Agent)', tag:'Agent↔Agent', desc:'Google 主导的 Agent 互操作协议，专用于 Agent 之间的任务协作', val:p.a2a, ph:'https://a2a.yourserver.com/agent'},
+    {key:'webhook', icon:'🌐', color:'#FFF4E0', name:'Webhook 回调', tag:'事件推送', desc:'接收外部系统的事件推送并触发你的 Agent 自动响应', val:p.webhook, ph:'https://yourserver.com/hook/agent'},
+    {key:'api', icon:'🧩', color:'#FEEBEA', name:'自定义 API 适配器', tag:'私有协议', desc:'为自有系统开发私有适配器，桥接进 AgentNexus 生态', val:p.api, ph:'https://api.yourserver.com/v1/agent'}
+  ];
+  return `
+  <div class="page">
+    <div class="card" style="overflow:hidden">
+      ${items.map((it,i)=>`
+      <div class="protocol-item">
+        <div class="p-icon" style="background:${it.color}">${it.icon}</div>
+        <div class="p-main">
+          <div class="p-name">${it.name} <span class="chip ${i<2?'green':'gray'}" style="font-size:10px">${it.tag}</span></div>
+          <div class="p-desc">${it.desc}</div>
+          <div class="p-field">
+            <input id="proto-${it.key}" value="${esc(it.val)}" placeholder="${it.ph}" onkeydown="if(event.key==='Enter')saveProto('${it.key}')">
+            <button class="btn btn-sm btn-ghost" onclick="testProto('${it.key}')">测试连接</button>
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="card card-pad" style="margin-top:16px">
+      <div class="section-title">AI 伙伴 · LLM 配置</div>
+      <div class="section-desc">配置后「我的 AI 伙伴」由大模型驱动（自由对话）；不配置则使用本地引擎。保存后无需重启，立即生效。</div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="form-item" style="margin:0"><label>API Key</label><input id="llm-key" type="password" placeholder="sk-…（本地保存，仅展示是否已配置）" style="width:100%"></div>
+        <div class="form-item" style="margin:0"><label>模型</label><input id="llm-model" placeholder="gpt-4o-mini" style="width:100%"></div>
+      </div>
+      <div class="form-item"><label>Base URL（OpenAI 兼容接口）</label><input id="llm-base" placeholder="https://api.openai.com/v1" style="width:100%"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveLlmConfig()">保存 LLM 配置</button>
+        <button class="btn btn-ghost" onclick="testLlm()">测试连通</button>
+        <span class="chip ${llmHasKey?'green':'amber'}" id="llm-status-chip">${llmHasKey?'已配置 '+llmModel:'未配置（本地引擎）'}</span>
+      </div>
+      <div id="llm-test-result" style="font-size:12px;color:var(--ink3);margin-top:10px"></div>
+    </div>
+    <div class="card card-pad" style="margin-top:16px;display:flex;gap:14px;align-items:center">
+      <div style="font-size:26px">🛡️</div>
+      <div style="flex:1">
+        <div class="t" style="font-weight:600;font-size:13px">接入安全策略</div>
+        <div style="font-size:12px;color:var(--ink3)">默认：仅接受已注册 Agent 的请求 · Agent 请求 HMAC 签名校验 · 会话全程加密 · 可随时下线</div>
+      </div>
+      <div class="switch on"></div>
+    </div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn btn-ghost btn-sm" onclick="resetDemo()">重置演示数据</button>
+    </div>
+  </div>`;
+}
+let llmHasKey=false, llmModel='gpt-4o-mini';
+async function loadLlmConfig(){
+  if(!apiOnline) return;
+  try{
+    const r=await apiGet('/api/llm/config');
+    if(r.ok){
+      llmHasKey=r.config.hasKey; llmModel=r.config.model;
+      if(document.getElementById('llm-base')) document.getElementById('llm-base').value=r.config.baseUrl;
+      if(document.getElementById('llm-model')) document.getElementById('llm-model').value=r.config.model;
+      const chip=document.getElementById('llm-status-chip');
+      if(chip){ chip.className='chip '+(llmHasKey?'green':'amber'); chip.textContent=llmHasKey?('已配置 '+llmModel):'未配置（本地引擎）'; }
+    }
+  }catch{}
+}
+async function saveLlmConfig(){
+  if(!apiOnline){ toast('后端离线','err'); return; }
+  const apiKey=(document.getElementById('llm-key').value||'').trim();
+  const model=(document.getElementById('llm-model').value||'').trim()||'gpt-4o-mini';
+  const baseUrl=(document.getElementById('llm-base').value||'').trim()||'https://api.openai.com/v1';
+  if(!apiKey){ toast('请填写 API Key','err'); return; }
+  try{
+    const r=await apiPost('/api/llm/config',{apiKey,model,baseUrl});
+    if(r.ok){ toast(r.message,'ok'); llmHasKey=true; llmModel=r.config.model; loadLlmConfig(); }
+    else toast('保存失败：'+(r.error||''),'err');
+  }catch{ toast('后端连接失败','err'); }
+}
+async function testLlm(){
+  const el=document.getElementById('llm-test-result');
+  if(!el) return;
+  el.textContent='测试中…';
+  try{
+    const r=await apiPost('/api/llm/test',{});
+    el.textContent = r.ok ? `✅ 模型响应：${r.reply}` : ('❌ '+(r.error||'未知'));
+  }catch{ el.textContent='❌ 连接失败'; }
+}
+function saveProto(key){ S.myAgent.protocols[key]=document.getElementById('proto-'+key).value.trim(); save(); toast('配置已保存','ok'); }
+function testProto(key){
+  const btn=document.getElementById('proto-'+key).parentElement.querySelector('button');
+  btn.textContent='测试中…'; btn.disabled=true;
+  setTimeout(()=>{ btn.textContent='✓ 连接成功'; btn.classList.add('btn-success');
+    setTimeout(()=>{ btn.textContent='测试连接'; btn.classList.remove('btn-success'); btn.disabled=false; },1800);
+    toast('端点连通性正常，握手延迟 42ms','ok');
+  },900);
+}
+
+/* ================================================================
+   对接流程
+   ================================================================ */
+function startHandshake(agentId){
+  const a=getAgent(agentId);
+  const steps=[
+    {t:`正在发现 ${a.name} 的 A2A 端点…`,s:'通过注册中心解析地址'},
+    {t:`已连接 ${a.name}（${a.org}）`,s:'完成身份认证与能力握手'},
+    {t:`${a.name} 的对接策略：${S.myAgent.policy==='auto'?'自动接受':'等待对方确认'}`,s:''},
+    {t:'建立安全会话通道',s:'双向加密，开始协作'}
+  ];
+  let i=0;
+  openModal(`
+    <div class="modal">
+      <div class="modal-head"><h3>正在与 ${a.name} 对接</h3>
+        <button class="icon-btn" onclick="closeModal()">✕</button></div>
+      <div class="modal-body"><div class="handshake" id="hs-steps"></div></div>
+      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">取消</button></div>
+    </div>`);
+  const renderHS=()=>{
+    document.getElementById('hs-steps').innerHTML = steps.map((st,idx)=>`
+      <div class="hs-step ${idx<i?'done':idx===i?'active':''}">
+        <div class="hs-dot">${idx<i?'✓':idx===i?'·':idx+1}</div>
+        <div><div class="hs-txt">${st.t}</div><div class="hs-sub">${st.s}</div></div>
+      </div>`).join('');
+  };
+  renderHS();
+  const timer=setInterval(()=>{
+    i++;
+    if(i<steps.length){ renderHS(); }
+    else{
+      clearInterval(timer);
+      document.querySelector('.modal-foot').innerHTML='';
+      document.querySelector('.modal-head h3').textContent='对接成功 ✓';
+      document.querySelector('.modal-body').innerHTML=`
+        <div style="text-align:center;padding:10px 0 6px">
+          <div style="font-size:44px;margin-bottom:8px">🎉</div>
+          <div style="font-weight:700;font-size:15px">${a.name} 已与 ${S.myAgent.name} 建立连接</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:6px">已自动创建会话 · 双方 Agent 即可开始协作</div>
+        </div>`;
+      document.querySelector('.modal-foot').innerHTML=`
+        <button class="btn btn-ghost" onclick="closeModal()">稍后再说</button>
+        <button class="btn btn-primary" onclick="finishHandshake('${a.id}')">进入会话 →</button>`;
+    }
+  }, 900);
+}
+function finishHandshake(agentId){
+  closeModal();
+  const a=getAgent(agentId);
+  if(!S.connections.find(c=>c.agentId===agentId)){
+    S.connections.push({agentId, since:nowTime(), lastMsg:'', lastTime:nowTime(), unread:false});
+    if(!S.contacts.find(c=>c.agentId===agentId)) S.contacts.push({agentId, since:nowTime()});
+  }
+  // 真实模式下同步建立平台对接关系
+  if(apiOnline && S.myAgent.platformSlug){
+    apiPost('/api/connections', { fromAgent: S.myAgent.platformSlug, toAgent: agentKey(a) })
+      .then(r=>{ if(r && !r.ok) toast('平台对接同步失败：'+(r.error||''), 'err'); })
+      .catch(()=>{});
+  }
+  // 对方 Agent 主动发来欢迎消息
+  pushMsg(agentId,{from:'peer',agentId,text:`你好！我是 ${a.name}（${a.ownerName || a.owner} 的 ${a.role}）。对接已建立，很高兴和 ${S.myAgent.name} 协作。${a.intro||''}`,time:nowTime()});
+  save();
+  curChat=agentId; curPage='chats'; render();
+  toast(`已与 ${a.name} 建立对接，其主人 ${a.ownerName || a.owner} 已加入你的人脉`, 'ok');
+}
+
+/* 被对接请求（通知进入） */
+function showAcceptModal(agentId){
+  const a=getAgent(agentId);
+  openModal(`
+    <div class="modal">
+      <div class="modal-head"><h3>新的对接请求</h3></div>
+      <div class="modal-body">
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
+          <div class="ava-lg" style="background:${a.color};width:52px;height:52px;border-radius:14px;font-size:24px">${a.emoji}</div>
+          <div>
+            <div style="font-weight:700">${a.name}</div>
+            <div style="font-size:12px;color:var(--ink3)">${esc(a.org)} · ${esc(a.industry)}</div>
+          </div>
+        </div>
+        <div class="kv" style="margin-bottom:6px">
+          <div class="k">能力</div><div>${a.tags.map(t=>`<span class="chip" style="margin-right:4px">${esc(t)}</span>`).join('')}</div>
+          <div class="k">主人</div><div>${esc(a.owner)}（${esc(a.ownerTitle)}）</div>
+          <div class="k">留言</div><div>${esc(a.fallback)}</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="rejectRequest('${a.id}')">暂不接收</button>
+        <button class="btn btn-primary" onclick="acceptRequest('${a.id}')">同意对接</button>
+      </div>
+    </div>`);
+}
+function acceptRequest(agentId){ closeModal(); finishHandshake(agentId); }
+function rejectRequest(agentId){
+  closeModal();
+  const a=getAgent(agentId);
+  toast(`已婉拒 ${a.name} 的对接请求`);
+}
+
+/* 主人名片 */
+function showOwnerCard(agentId){
+  const a=getAgent(agentId);
+  const m=S.myAgent;
+  const shared=m.tags.filter(t=>a.tags.includes(t));
+  openModal(`
+    <div class="modal">
+      <div class="modal-head"><h3>主人名片</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
+          <div class="ava-lg" style="background:${a.ownerColor};border-radius:50%;width:64px;height:64px;font-size:26px">${a.owner[0]}</div>
+          <div>
+            <div style="font-weight:800;font-size:17px">${esc(a.owner)}</div>
+            <div style="font-size:13px;color:var(--ink2)">${esc(a.ownerTitle)} @ ${esc(a.org)}</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <span class="chip green">已验证身份</span>
+              <span class="chip gray">${esc(a.industry)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="kv" style="margin-bottom:14px">
+          <div class="k">TA 的 Agent</div><div>${a.emoji} ${esc(a.name)}</div>
+          <div class="k">负责领域</div><div>${esc(a.role)}</div>
+          <div class="k">共同关注</div><div>${shared.length?shared.map(t=>`<span class="chip green" style="margin-right:4px">${esc(t)}</span>`).join(''):'暂无'}</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">关闭</button>
+        <button class="btn btn-primary" onclick="sayHello('${a.id}');closeModal()">💌 给 TA 打个招呼</button>
+      </div>
+    </div>`);
+}
+
+function resetDemo(){
+  localStorage.removeItem(STORE_KEY);
+  S=defaultState(); curChat=null; render();
+  toast('演示数据已重置');
+}
+
+/* ================================================================
+   初始化
+   ================================================================ */
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.icon-btn') && !e.target.closest('#noti-pop')){ notiOpen=false; renderNoti(); }
+});
+document.querySelectorAll('.nav-item').forEach(b=>{
+  b.addEventListener('click',()=>{ curPage=b.dataset.page; curChat=null; render(); });
+});
+// 首次进入：若从未保存过设置，预置欢迎通知提示配置
+if(!localStorage.getItem(STORE_KEY+'_welcomed')){
+  localStorage.setItem(STORE_KEY+'_welcomed','1');
+}
+checkApi();
+render();
+
+/* ================================================================
+   界面增强 v2 · 抽屉导航 / 主题 / 搜索防抖 / 未读角标
+   追加于主脚本末尾，不改动既有业务逻辑
+   ================================================================ */
+(function(){
+  'use strict';
+
+  /* ---------- 移动端抽屉导航 ---------- */
+  window.toggleNav = function(){
+    var open = document.body.classList.toggle('nav-open');
+    var btn = document.getElementById('menu-btn');
+    if(btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    var ov = document.getElementById('nav-overlay');
+    if(ov) ov.style.pointerEvents = open ? 'auto' : 'none';
+  };
+  window.closeNav = function(){
+    if(!document.body.classList.contains('nav-open')) return;
+    document.body.classList.remove('nav-open');
+    var btn = document.getElementById('menu-btn');
+    if(btn) btn.setAttribute('aria-expanded','false');
+    var ov = document.getElementById('nav-overlay');
+    if(ov) ov.style.pointerEvents = 'none';
+  };
+  // 点击侧栏导航项后自动收起抽屉（捕获阶段，先于业务 handler）
+  document.addEventListener('click', function(e){
+    var item = e.target && e.target.closest ? e.target.closest('.nav-item') : null;
+    if(item && item.closest('.sidebar')) closeNav();
+  }, true);
+  // Esc 关闭抽屉
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNav(); });
+
+  /* ---------- 主题切换 ---------- */
+  window.toggleTheme = function(){
+    var now = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', now);
+    try{ localStorage.setItem('agenthub_theme', now); }catch(e){}
+    if(typeof toast === 'function') toast(now === 'dark' ? '已切换深色模式' : '已切换浅色模式');
+  };
+
+  /* ---------- 全局搜索防抖（避免逐字全量重渲染） ---------- */
+  var searchTimer = null;
+  window.onGlobalSearchDebounced = function(v){
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function(){ onGlobalSearch(v); }, 220);
+  };
+
+  /* ---------- 未读角标同步（侧栏 + 底部标签栏） ----------
+     原 #chat-dot 为死代码（从未被切换），此处补齐为真实未读指示 */
+  function syncUnreadDots(){
+    try{
+      var n = (S.connections || []).filter(function(c){ return c.unread; }).length;
+      ['chat-dot','chat-dot-tab'].forEach(function(id){
+        var el = document.getElementById(id);
+        if(el) el.style.display = n > 0 ? '' : 'none';
+      });
+    }catch(e){}
+  }
+  var origRenderNav = window.renderNav;
+  if(typeof origRenderNav === 'function'){
+    window.renderNav = function(){
+      origRenderNav.apply(this, arguments);
+      syncUnreadDots();
+    };
+  }
+})();
+</script>
+</body>
+</html>

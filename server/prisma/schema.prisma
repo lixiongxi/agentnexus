@@ -1,0 +1,213 @@
+// ============================================================
+// AgentNexus 数据模型 v2（全栈重写版）
+//
+// 相对 v1 的关键升级：
+//  1. secretHash   —— Agent 密钥不再明文入库，改为 AES-256-GCM 加密存储（签名校验需密钥原文参与计算，
+//                     故不能用单向哈希；加密钥匙由 SESSION_SECRET 经 scrypt 派生），泄露库也无法直接冒用身份
+//  2. Tag/AgentTag —— 标签由 JSON 字符串改为关联表，可建索引、可聚合统计（v1 只能 LIKE 全表扫）
+//  3. Connection   —— aSlug/bSlug 字典序规范化 + 联合唯一，彻底消除 A→B 与 B→A 重复对接
+//  4. Message      —— 增加 conversationId 与 readAt，会话查询与未读数不再全表扫描
+//  5. ChatSession  —— 对话会话归属到主人，杜绝 v1「sessionId 客户端自报」导致的越权读取
+//  6. AgentSetting —— 巡航设置按 Agent 隔离（v1 为进程级全局单例，多 Agent 必然互相覆盖）
+//  7. AuditLog     —— 全量审计留痕，所有敏感写操作可追溯
+//  8. LlmConfig    —— LLM 配置入库，替代 v1「运行时写回 .env」的任意文件写入风险
+//
+// 数据库：默认 SQLite（零依赖开箱即用）。
+// 切 PostgreSQL：provider 改为 "postgresql" 并设置 DATABASE_URL，无需改任何业务代码。
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// 主人：Agent 背后的人（可拥有多个 Agent）
+model Owner {
+  id           String   @id @default(cuid())
+  name         String
+  org          String
+  title        String?
+  email        String?
+  passwordHash String? // 主人登录口令（scrypt 摘要）；未设置表示仅支持演示登录
+  role         String   @default("owner") // owner / admin
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  agents   Agent[]
+  sessions OwnerSession[]
+  chats    ChatSession[]
+
+  @@index([email])
+}
+
+/// 主人登录会话（令牌存摘要，支持服务端主动吊销）
+model OwnerSession {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+  @@index([expiresAt])
+}
+
+/// Agent：注册进平台并被发现对接的智能体
+model Agent {
+  id          String   @id @default(cuid())
+  slug        String   @unique // 对外唯一标识，如 "xiaotuo"
+  name        String
+  emoji       String   @default("🤖")
+  color       String   @default("#4F6BFF")
+  role        String // 一句话定位
+  description String   @default("")
+  industry    String   @default("企业服务")
+  online      Boolean  @default(true)
+  autoAccept  Boolean  @default(true) // 对接策略：true = 自动接受
+  secretHash  String // AES-256-GCM 加密存储（签名校验需密钥原文，故用可逆加密；加密钥匙由 SESSION_SECRET 经 scrypt 派生），明文仅在注册时返回一次
+  ownerId     String
+  owner       Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  mcpEndpoint String?
+  a2aEndpoint String?
+  verified    Boolean  @default(false) // 平台认证（审核白名单），未认证不参与自动对接
+  status      String   @default("active") // active / suspended
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tags    AgentTag[]
+  setting AgentSetting?
+
+  @@index([industry])
+  @@index([verified, status])
+  @@index([ownerId])
+}
+
+/// 标签字典（去重，支撑热门标签聚合）
+model Tag {
+  name   String     @id
+  agents AgentTag[]
+
+  @@index([name])
+}
+
+/// Agent ↔ 标签 多对多关联
+model AgentTag {
+  agentId String
+  tagName String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagName], references: [name], onDelete: Cascade)
+
+  @@id([agentId, tagName])
+  @@index([tagName])
+}
+
+/// 对接关系：aSlug/bSlug 按字典序规范化，保证 (A,B) 与 (B,A) 唯一
+model Connection {
+  id        String   @id @default(cuid())
+  aSlug     String // 字典序较小的一方
+  bSlug     String // 字典序较大的一方
+  initiator String // 实际发起方（用于区分谁主动）
+  status    String   @default("accepted") // pending / accepted / rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([aSlug, bSlug])
+  @@index([aSlug, status])
+  @@index([bSlug, status])
+}
+
+/// 会话消息
+model Message {
+  id             String    @id @default(cuid())
+  conversationId String // `${aSlug}:${bSlug}` 规范化会话键
+  fromAgent      String
+  toAgent        String
+  text           String
+  type           String    @default("chat") // chat / task / event / bot / autopilot / a2a-in
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([toAgent, readAt])
+}
+
+/// 虚拟伙伴对话会话（归属主人，杜绝 sessionId 自报导致的越权）
+model ChatSession {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title     String   @default("新的对话")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([ownerId, updatedAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String // user / assistant
+  text      String
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+/// 自主巡航设置（按 Agent 隔离；v1 为进程级全局单例，多 Agent 互相覆盖）
+model AgentSetting {
+  agentSlug  String   @id
+  agent      Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
+  enabled    Boolean  @default(true)
+  minScore   Int      @default(60)
+  autoGreet  Boolean  @default(true)
+  industries String   @default("[]") // JSON 数组
+  tags       String   @default("[]") // JSON 数组
+  updatedAt  DateTime @updatedAt
+}
+
+/// 自主巡航日志（仅持久化 created / error 等有意义事件）
+model AutopilotLog {
+  id        String   @id @default(cuid())
+  fromAgent String
+  toAgent   String
+  score     Int
+  reason    String
+  result    String // created / error
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([fromAgent, createdAt])
+}
+
+/// 审计日志：所有敏感写操作留痕
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorType String // owner / agent / admin / system / anonymous
+  actorId   String   @default("")
+  action    String // agent.verify / llm.update / connection.create ...
+  target    String   @default("")
+  detail    String   @default("")
+  ip        String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+/// 系统级 LLM 配置（单行；入库替代 v1 写回 .env 的做法）
+model LlmConfig {
+  id        Int      @id @default(1)
+  apiKey    String   @default("")
+  baseUrl   String   @default("https://api.openai.com/v1")
+  model     String   @default("gpt-4o-mini")
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,130 @@
+/**
+ * 设计令牌（Design Tokens）
+ *
+ * 沿用 v1 已通过 WCAG AA 校验的色阶与比例体系，并补齐暗色主题。
+ * 所有组件样式只能引用变量，禁止硬编码颜色值。
+ */
+
+:root {
+  /* —— 中性色阶 —— */
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-2: #fafbfe;
+  --surface-3: #f1f4fa;
+  --line: #e8ecf5;
+  --line-2: #dce2f0;
+
+  /* —— 文字（对比度均达 WCAG AA） —— */
+  --ink: #141a26; /* 15.8:1 on #FFF */
+  --ink-2: #4a5568; /*  7.5:1 */
+  --ink-3: #6b7488; /*  4.9:1 ✅AA */
+  --ink-4: #98a1b5;
+
+  /* —— 品牌 —— */
+  --brand: #4f6bff;
+  --brand-2: #7c5cff;
+  --brand-hover: #3d59f0;
+  --brand-active: #3350e0;
+  --brand-soft: #eef1ff;
+  --brand-ring: rgba(79, 107, 255, 0.3);
+  --grad-brand: linear-gradient(135deg, #4f6bff 0%, #7c5cff 100%);
+
+  /* —— 语义色 —— */
+  --green: #0e9f6e;
+  --green-soft: #e6f7ef;
+  --amber: #d97706;
+  --amber-soft: #fef3e2;
+  --red: #e02424;
+  --red-soft: #fdecec;
+  --cyan: #0e9dbd;
+  --cyan-soft: #e5f6fa;
+
+  /* —— 间距（4pt 基准） —— */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* —— 圆角 —— */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-full: 999px;
+
+  /* —— 阴影（分层 elevation） —— */
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --elev-2: 0 4px 14px rgba(16, 24, 40, 0.07);
+  --elev-3: 0 12px 32px rgba(16, 24, 40, 0.12);
+  --elev-4: 0 24px 60px rgba(16, 24, 40, 0.18);
+
+  /* —— 动效 —— */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 140ms;
+  --dur-2: 220ms;
+  --dur-3: 340ms;
+
+  /* —— 字号 —— */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13.5px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 22px;
+  --fs-3xl: 26px;
+  --lh-tight: 1.35;
+  --lh-base: 1.6;
+
+  /* —— 尺寸 —— */
+  --sidebar-w: 236px;
+  --topbar-h: 60px;
+  --container: 1120px;
+
+  --mono: "SFMono-Regular", Consolas, "Courier New", monospace;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* ===== 暗色主题 ===== */
+[data-theme="dark"] {
+  --bg: #0e1117;
+  --surface: #161b26;
+  --surface-2: #1c2230;
+  --surface-3: #232a3a;
+  --line: #262d3d;
+  --line-2: #333b4d;
+
+  --ink: #e8ecf5; /* 14.2:1 on #161B26 */
+  --ink-2: #b4bcce; /*  8.1:1 */
+  --ink-3: #8a93a8; /*  5.4:1 ✅AA */
+  --ink-4: #6b7488;
+
+  --brand: #6b84ff;
+  --brand-2: #9b7dff;
+  --brand-hover: #8296ff;
+  --brand-active: #95a6ff;
+  --brand-soft: #1e2740;
+  --brand-ring: rgba(107, 132, 255, 0.35);
+
+  --green: #34d399;
+  --green-soft: #10312a;
+  --amber: #fbbf24;
+  --amber-soft: #33260f;
+  --red: #f87171;
+  --red-soft: #36191b;
+  --cyan: #22d3ee;
+  --cyan-soft: #0d2c33;
+
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --elev-2: 0 4px 14px rgba(0, 0, 0, 0.4);
+  --elev-3: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --elev-4: 0 24px 60px rgba(0, 0, 0, 0.6);
+}

@@ -1,0 +1,91 @@
+// AgentNexus M0 数据模型
+// 默认 SQLite（零依赖开箱即用）；切换 PostgreSQL：把 provider 改为 "postgresql"
+// 并设置 DATABASE_URL="postgresql://user:pass@localhost:5432/agenthub"，再执行 db:push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // 切 PG 时改为 "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// 主人：Agent 背后的人（可拥有多个 Agent）
+model Owner {
+  id        String   @id @default(cuid())
+  name      String
+  org       String
+  title     String?
+  email     String?
+  createdAt DateTime @default(now())
+  agents    Agent[]
+}
+
+/// Agent：注册进平台并被发现对接的智能体
+model Agent {
+  id          String   @id @default(cuid())
+  slug        String   @unique // 对外唯一标识，如 "xiaotuo"
+  name        String
+  emoji       String   @default("🤖")
+  color       String   @default("#4F6BFF")
+  role        String   // 一句话定位
+  description String   @default("")
+  industry    String   @default("企业服务")
+  tags        String   @default("[]") // JSON 数组: ["销售","CRM"]
+  online      Boolean  @default(true)
+  autoAccept  Boolean  @default(true) // 对接策略: true=自动接受
+  secret      String   // Agent 密钥（HMAC 签名用），仅创建时返回一次
+  ownerId     String
+  owner       Owner    @relation(fields: [ownerId], references: [id])
+  mcpEndpoint String?  // 可选 MCP Server 地址
+  a2aEndpoint String?  // 可选 A2A 端点
+  verified    Boolean  @default(false) // 审核白名单：true=平台认证，可被自动对接
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// 对接关系：两个 Agent 之间建立的连接
+model Connection {
+  id        String   @id @default(cuid())
+  fromAgent String
+  toAgent   String
+  status    String   @default("active") // active / pending / rejected
+  createdAt DateTime @default(now())
+  @@unique([fromAgent, toAgent])
+}
+
+/// 会话消息（M1 消息路由网关落库，双向可查）
+model Message {
+  id        String   @id @default(cuid())
+  fromAgent String
+  toAgent   String
+  text      String
+  type      String   @default("chat") // chat / task / event / bot
+  createdAt DateTime @default(now())
+  @@index([fromAgent, toAgent, createdAt])
+}
+
+/// 虚拟伙伴对话（我的 AI 伙伴：主人 ↔ 自己的 Agent 多轮对话）
+model ChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String   // user / assistant
+  text      String
+  createdAt DateTime @default(now())
+  @@index([sessionId, createdAt])
+}
+
+/// 自主巡航日志（Autopilot：无人值守自动对接记录）
+model AutopilotLog {
+  id        String   @id @default(cuid())
+  fromAgent String
+  toAgent   String
+  score     Int
+  reason    String
+  result    String   // created / already / skip_low_score / error
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([fromAgent, createdAt])
+}

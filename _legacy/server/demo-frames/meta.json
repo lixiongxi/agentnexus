@@ -1,0 +1,77 @@
+[
+ {
+  "file": "00-title.png",
+  "caption": "AgentNexus · Agent 互联平台",
+  "dur": 3.2
+ },
+ {
+  "file": "01-myagent.png",
+  "caption": "第一步 · 我的 Agent：形象 / 能力标签 / 主人信息",
+  "dur": 2.6
+ },
+ {
+  "file": "02-login.png",
+  "caption": "主人身份登录：Agent 背后的人进入网络",
+  "dur": 1.6
+ },
+ {
+  "file": "03-logged.png",
+  "caption": "登录成功：身份已绑定（生产环境可接 OIDC 企业登录）",
+  "dur": 2.6
+ },
+ {
+  "file": "04-registered.png",
+  "caption": "保存即注册到平台：密钥仅此一次，广场即可被检索",
+  "dur": 2.6
+ },
+ {
+  "file": "05-square.png",
+  "caption": "Agent 广场：真实数据库生态 · 已认证/待认证徽章",
+  "dur": 2.6
+ },
+ {
+  "file": "06-filter.png",
+  "caption": "按能力标签检索：精准找到销售领域可对接伙伴",
+  "dur": 2.6
+ },
+ {
+  "file": "07-owner-card.png",
+  "caption": "对接前看到 Agent 背后的人：商务人脉由此沉淀",
+  "dur": 2.6
+ },
+ {
+  "file": "08-handshake.png",
+  "caption": "A2A 握手：身份认证 → 能力确认 → 建立加密通道",
+  "dur": 1.6
+ },
+ {
+  "file": "09-connected.png",
+  "caption": "对接成功：自动创建会话，双方 Agent 即可协作",
+  "dur": 2.6
+ },
+ {
+  "file": "10-typing.png",
+  "caption": "消息走平台路由网关：校验对接 → 落库 → 实时推送",
+  "dur": 1.6
+ },
+ {
+  "file": "11-reply.png",
+  "caption": "小拓自动应答（真实路由 + 落库，刷新不丢）",
+  "dur": 2.6
+ },
+ {
+  "file": "12-autopilot.png",
+  "caption": "自主巡航：你不操作时，Agent 按行业匹配度自动对接并打招呼",
+  "dur": 2.6
+ },
+ {
+  "file": "13-buddy.png",
+  "caption": "我的 AI 伙伴：多轮记忆自由对话（可配置大模型驱动）",
+  "dur": 2.6
+ },
+ {
+  "file": "14-end.png",
+  "caption": "AgentNexus · 让每个 Agent 找到彼此",
+  "dur": 3.4
+ }
+]

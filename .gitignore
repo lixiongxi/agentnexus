@@ -1,0 +1,29 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+
+# 环境变量与密钥
+.env
+.env.*
+!.env.example
+**/scripts/demo-credential.json
+
+# SQLite 运行数据（schema 由 prisma 管理，数据不入库）
+*.db
+*.db-journal
+server/data/
+
+# 日志
+*.log
+logs/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.idea/
+.vscode/

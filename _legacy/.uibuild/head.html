@@ -1,0 +1,10 @@
+<script>
+/* 主题预置：在样式生效前应用，避免深色模式闪白（FOUC） */
+(function(){
+  try{
+    var t = localStorage.getItem('agenthub_theme');
+    var dark = t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    if(dark) document.documentElement.setAttribute('data-theme','dark');
+  }catch(e){}
+})();
+</script>

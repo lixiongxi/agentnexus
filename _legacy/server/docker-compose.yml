@@ -1,0 +1,20 @@
+# 本地一键起基础设施（有 Docker 时启用）
+# M0 默认用 SQLite 无需本文件；M1 会话/在线状态需要 Redis 时使用：
+#   docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agenthub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+volumes:
+  pgdata:
