@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用咨询与讨论
+    url: https://github.com/<org>/agentnexus/discussions
+    about: 部署问题、接入咨询、方案讨论请到 Discussions
+  - name: 安全漏洞
+    url: https://github.com/<org>/agentnexus/security/advisories/new
+    about: 请勿以公开 Issue 报告安全漏洞，使用私密安全建议渠道
