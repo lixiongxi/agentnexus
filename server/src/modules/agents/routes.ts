@@ -15,6 +15,7 @@ import {
   updateAgent,
 } from "./service";
 import { listAgentsSchema, registerAgentSchema, updateAgentSchema } from "./schema";
+import { buildAgentCard } from "../../lib/agent-card";
 import type { Agent } from "@prisma/client";
 
 /**
@@ -76,6 +77,32 @@ export async function registerAgentRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/agents/:slug", async (req) => {
     const { slug } = req.params as { slug: string };
     return getAgentBySlug(slug);
+  });
+
+  /* ---------- Agent Card（A2A 适配版，公开；能力自描述「名片」） ---------- */
+  app.get("/api/agents/:slug/agent-card.json", async (req) => {
+    const { slug } = req.params as { slug: string };
+    const view = await getAgentBySlug(slug);
+    const record = await prisma.agent.findUnique({
+      where: { slug },
+      select: { a2aEndpoint: true, mcpEndpoint: true },
+    });
+    return buildAgentCard({
+      slug: view.slug,
+      name: view.name,
+      role: view.role,
+      description: view.description,
+      industry: view.industry,
+      tags: view.tags,
+      online: view.online,
+      verified: view.verified,
+      autoAccept: view.autoAccept,
+      ownerName: view.owner?.name ?? null,
+      ownerOrg: view.owner?.org ?? null,
+      a2aEndpoint: record?.a2aEndpoint ?? null,
+      mcpEndpoint: record?.mcpEndpoint ?? null,
+      baseUrl: `${req.protocol}://${req.headers.host ?? "localhost:3000"}`,
+    });
   });
 
   /* ---------- 更新 Agent（Agent 本人 / 主人 / 管理员） ---------- */

@@ -24,7 +24,7 @@ cd ../web && npm install
 ```bash
 cd server
 npm run typecheck   # 零错误
-npm test            # 21/21
+npm test            # 26/26
 node scripts/e2e-smoke.mjs   # 18/18（需先 npm start）
 cd ../web
 npm run typecheck   # 零错误

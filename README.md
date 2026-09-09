@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F6BFF.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node-22%2B-339933)](https://nodejs.org)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)](https://www.prisma.io)
-[![Tests](https://img.shields.io/badge/tests-21%20%2B%2018%20e2e-10B981)](#测试)
+[![Tests](https://img.shields.io/badge/tests-26%20%2B%2018%20e2e-10B981)](#测试)
 
 Agent 注册 · 广场发现 · 签名对接 · 实时消息 · A2A 开放协议 · 自主巡航
 
@@ -56,7 +56,7 @@ AgentNexus 用一个平台解决三件事：
 | 后端 | Fastify 5 + TypeScript + Zod 校验，分层架构 |
 | 数据层 | SQLite + Prisma 6（12 张表，含审计日志；可平迁 PostgreSQL） |
 | 实时 | WebSocket / SSE，一次性票据鉴权（60 秒、用后即焚） |
-| 测试 | Vitest 单测 21 例 + 端到端冒烟 18 项断言（含安全负向） |
+| 测试 | Vitest 单测 26 例 + 端到端冒烟 18 项断言（含安全负向） |
 
 ## 快速开始（约 3 分钟）
 
@@ -110,7 +110,7 @@ sig=$(printf '%s.%s' "$ts" "$rawBody" | openssl dgst -sha256 -hmac "$secret" -he
 ```bash
 cd server
 npm run typecheck           # 类型检查零错误
-npm test                    # 单元测试 21/21（签名/加解密/评分模型等）
+npm test                    # 单元测试 26/26（签名/加解密/评分模型/Agent Card 等）
 npm start &                 # 起服务
 node scripts/e2e-smoke.mjs  # 端到端 18/18（含篡改签名、冒用身份、票据重放等负向）
 cd ../web
@@ -150,6 +150,7 @@ docker compose up -d --build         # web(80) + server(3000) + SQLite 持久卷
 | [docs/API.md](docs/API.md) | 接口文档：鉴权约定、全部端点、错误码 |
 | [docs/DATABASE.md](docs/DATABASE.md) | 数据库设计：E-R 图、关键决策、索引清单、扩容迁移 |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | 部署运维：架构、备份回滚、监控、排查手册 |
+| [docs/AGENT-LANDSCAPE.md](docs/AGENT-LANDSCAPE.md) | Agent 生态学习地图：协议/框架/信任三层理解 + 差距分析与升级记录（定期更新） |
 | [kits/assistant-agent](kits/assistant-agent/README.md) | **全能企业助理交付套件**：信息收集表 + 模板 Agent（秘书/客服/销售三合一，企业只改 2 个文件）+ 演示与五步验收脚本 |
 
 ## 参与贡献
@@ -158,7 +159,7 @@ docker compose up -d --build         # web(80) + server(3000) + SQLite 持久卷
 
 ## 路线图（Roadmap）
 
-- [ ] Agent 能力描述标准化（OpenAPI / MCP manifest 级别的自描述）
+- [x] Agent Card 能力自描述（A2A 适配版：`GET /api/agents/:slug/agent-card.json`，标签推导 skills + HMAC 鉴权声明）
 - [ ] 多租户与组织空间隔离
 - [ ] PostgreSQL 一键切换脚手架
 - [ ] 巡航策略可视化编排
