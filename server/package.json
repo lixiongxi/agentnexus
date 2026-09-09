@@ -1,6 +1,6 @@
 {
   "name": "@agenthub/server",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "AgentNexus 服务端 · 分层架构重写版（secure by default）",
   "type": "module",
