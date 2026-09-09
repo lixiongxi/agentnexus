@@ -150,6 +150,7 @@ docker compose up -d --build         # web(80) + server(3000) + SQLite 持久卷
 | [docs/API.md](docs/API.md) | 接口文档：鉴权约定、全部端点、错误码 |
 | [docs/DATABASE.md](docs/DATABASE.md) | 数据库设计：E-R 图、关键决策、索引清单、扩容迁移 |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | 部署运维：架构、备份回滚、监控、排查手册 |
+| [kits/assistant-agent](kits/assistant-agent/README.md) | **全能企业助理交付套件**：信息收集表 + 模板 Agent（秘书/客服/销售三合一，企业只改 2 个文件）+ 演示与五步验收脚本 |
 
 ## 参与贡献
 
