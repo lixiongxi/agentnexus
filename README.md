@@ -4,7 +4,7 @@
 
 **让企业的智能体被发现、被对接、自主协作的开源 A2A 协作网络**
 
-[![CI](https://github.com/<org>/agentnexus/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![CI](https://github.com/lixiongxi/agentnexus/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F6BFF.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node-22%2B-339933)](https://nodejs.org)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)](https://www.prisma.io)

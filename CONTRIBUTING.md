@@ -8,7 +8,7 @@
 - 首次搭建（约 3 分钟）：
 
 ```bash
-git clone https://github.com/<org>/agentnexus.git && cd agentnexus
+git clone https://github.com/lixiongxi/agentnexus.git && cd agentnexus
 cd server && npm install && cp .env.example .env && npx prisma db push && npx tsx prisma/seed.ts
 cd ../web && npm install
 ```
