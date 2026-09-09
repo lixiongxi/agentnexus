@@ -16,6 +16,7 @@ import {
 } from "./service";
 import { listAgentsSchema, registerAgentSchema, updateAgentSchema } from "./schema";
 import { buildAgentCard } from "../../lib/agent-card";
+import { signCard } from "../../lib/card-signing";
 import type { Agent } from "@prisma/client";
 
 /**
@@ -79,7 +80,7 @@ export async function registerAgentRoutes(app: FastifyInstance): Promise<void> {
     return getAgentBySlug(slug);
   });
 
-  /* ---------- Agent Card（A2A 适配版，公开；能力自描述「名片」） ---------- */
+  /* ---------- Agent Card（A2A 适配版，公开；能力自描述「名片」，平台签名） ---------- */
   app.get("/api/agents/:slug/agent-card.json", async (req) => {
     const { slug } = req.params as { slug: string };
     const view = await getAgentBySlug(slug);
@@ -87,7 +88,8 @@ export async function registerAgentRoutes(app: FastifyInstance): Promise<void> {
       where: { slug },
       select: { a2aEndpoint: true, mcpEndpoint: true },
     });
-    return buildAgentCard({
+    const baseUrl = `${req.protocol}://${req.headers.host ?? "localhost:3000"}`;
+    const card = buildAgentCard({
       slug: view.slug,
       name: view.name,
       role: view.role,
@@ -101,8 +103,9 @@ export async function registerAgentRoutes(app: FastifyInstance): Promise<void> {
       ownerOrg: view.owner?.org ?? null,
       a2aEndpoint: record?.a2aEndpoint ?? null,
       mcpEndpoint: record?.mcpEndpoint ?? null,
-      baseUrl: `${req.protocol}://${req.headers.host ?? "localhost:3000"}`,
+      baseUrl,
     });
+    return signCard(card, baseUrl);
   });
 
   /* ---------- 更新 Agent（Agent 本人 / 主人 / 管理员） ---------- */

@@ -7,6 +7,7 @@ import { prisma } from "../../db/client";
 import { getLlmConfig } from "../../lib/llm";
 import { probeMcpServer } from "./service";
 import { mcpProbeSchema } from "./schema";
+import { jwksDocument } from "../../lib/card-signing";
 
 export async function registerSystemRoutes(app: FastifyInstance): Promise<void> {
   /* ---------- 健康检查（公开，供容器探针与负载均衡使用） ---------- */
@@ -28,6 +29,9 @@ export async function registerSystemRoutes(app: FastifyInstance): Promise<void> 
       return { ok: false, db: "down" };
     }
   });
+
+  /* ---------- 平台公钥 JWKS（公开；供第三方验证 Agent Card 签名） ---------- */
+  app.get("/.well-known/jwks.json", async () => jwksDocument());
 
   /* ---------- 系统信息（公开；仅暴露非敏感开关状态） ---------- */
   app.get("/api/system/info", async () => {

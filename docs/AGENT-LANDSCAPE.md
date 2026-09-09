@@ -41,7 +41,7 @@
 | 业界做法 | AgentNexus 现状 | 结论 / 动作 |
 | --- | --- | --- |
 | Agent Card（`/.well-known/agent-card.json`） | ❌ 无 | ✅ **本次已实现**：`GET /api/agents/:slug/agent-card.json`（A2A 适配版，标签自动推导 skills、如实声明 HMAC 鉴权、暴露全部互操作端点、含 x-agentnexus 扩展段） |
-| Signed Agent Cards | 平台有 verified 认证标识 + HMAC 请求签名 | 路线图：卡片签名（平台私钥签名 or Agent 自签） |
+| Signed Agent Cards | 平台有 verified 认证标识 + HMAC 请求签名 | ✅ **本次已实现**：Agent Card 附 Ed25519 平台签名（`signature` 块：kid / keyUrl / payloadDigest / value），公钥经 `GET /.well-known/jwks.json`（JWKS）发布，第三方可独立验签；密钥从 SESSION_SECRET 确定性派生（轮换密钥即轮换签名身份） |
 | Task 生命周期（submitted→working→completed/failed） | 消息 type 含 task 但无状态机 | 路线图：消息升级为带生命周期的 Task 对象 |
 | MCP 工具生态 | Agent 表有 mcpEndpoint + 探测能力 | 路线图：Agent Card 已暴露 mcp 端点；后续做 MCP Server 注册与工具发现 |
 | 可观测性（LangSmith 级） | 全量审计日志已内置 | 已具备基础；路线图：会话级 trace 视图 |
@@ -64,6 +64,13 @@
 ## 更新日志
 
 <!-- 「Agent 生态周报」自动化在此追加：搜索 A2A/MCP/框架/信任层的关键变化，对比本文「差距分析」，追加条目。 -->
+
+### 2026-09-09 · 第二期：落地 Signed Agent Cards
+- 升级内容：Agent Card 附平台 **Ed25519 签名**（对标 A2A v1.0 Signed Agent Cards）——`signature` 块含 algorithm / keyId / keyUrl / payloadDigest / value（base64url）。
+- 公钥发现：新增 **`GET /.well-known/jwks.json`**（JWKS，OKP/Ed25519），第三方按 keyId 取公钥独立验签，无需信任平台口头声明。
+- 工程实现：`server/src/lib/card-signing.ts`（canonical JSON 键序无关签名 + 确定性密钥派生 + 平台自验/外部 JWK 验签），5 个新单测（总 **31**）。
+- 实测（第三方视角）：kid 匹配 ✓ payloadDigest 匹配 ✓ Ed25519 验签 ✓ 篡改卡片任意字段后验签拒绝 ✓。
+- 安全边界提醒：签名 = 执行完整性（卡片未被篡改、确由平台签发）；决策完整性（Agent 被注入后的行为）仍需输入过滤与提示词隔离，见差距表末行。
 
 ### 2026-09-09 · 首次成稿
 - 建立三层理解框架（协议 / 框架 / 信任与经济）与差距分析表。
