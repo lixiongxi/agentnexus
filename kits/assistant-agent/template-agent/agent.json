@@ -1,0 +1,28 @@
+{
+  "slug": "enterprise-assistant",
+  "name": "小助企业助理",
+  "emoji": "🗂️",
+  "color": "#4F6BFF",
+  "role": "企业全能助理：秘书 + 客服 + 销售",
+  "description": "像秘书一样安排会议与提醒，像客服一样解答问题与登记工单，像销售一样推荐产品与登记线索。支持转人工。",
+  "industry": "企业服务",
+  "tags": ["智能客服", "会议预约", "产品推荐", "线索登记", "转人工"],
+  "autoAccept": true,
+  "online": true,
+  "capabilities": {
+    "secretary": true,
+    "sales": true,
+    "ticket": true
+  },
+  "integrations": {
+    "calendarApiUrl": "",
+    "crmApiUrl": "",
+    "ticketApiUrl": ""
+  },
+  "owner": {
+    "name": "企业对接人",
+    "org": "示例科技有限公司",
+    "title": "IT 负责人",
+    "email": ""
+  }
+}

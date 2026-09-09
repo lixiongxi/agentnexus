@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AgentNexus · 企业全能助理信息收集表</title>
+<style>
+  :root {
+    --brand: #4f6bff; --brand-deep: #3b53d9; --ink: #16213a; --ink-2: #46536b;
+    --ink-3: #8a94a8; --line: #e6eaf2; --surface: #ffffff; --bg: #f6f8fc;
+    --green: #12a150; --amber: #b97a0f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.65;
+    -webkit-font-smoothing: antialiased; padding: 32px 16px;
+  }
+  .page {
+    max-width: 880px; margin: 0 auto; background: var(--surface);
+    border-radius: 16px; box-shadow: 0 8px 40px rgba(22,33,58,.08); overflow: hidden;
+  }
+  .hero {
+    background: linear-gradient(135deg, #2c3e8f 0%, var(--brand) 60%, #7a5cff 100%);
+    color: #fff; padding: 40px 48px 32px;
+  }
+  .brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .logo {
+    width: 46px; height: 46px; border-radius: 12px; background: rgba(255,255,255,.18);
+    display: grid; place-items: center; font-size: 24px; font-weight: 800;
+  }
+  .brand-name { font-size: 22px; font-weight: 700; letter-spacing: .5px; }
+  .brand-tag { font-size: 12px; opacity: .85; }
+  .hero h1 { font-size: 28px; font-weight: 750; line-height: 1.35; margin-bottom: 10px; }
+  .hero p { font-size: 14.5px; opacity: .92; max-width: 660px; }
+  .hero-badges { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .hero-badges span {
+    font-size: 12px; padding: 4px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28);
+  }
+  .body { padding: 34px 48px 40px; }
+  .notice {
+    background: #f0f4ff; border: 1px solid #d9e2ff; border-radius: 12px;
+    padding: 14px 18px; font-size: 13px; color: var(--ink-2); margin-bottom: 8px;
+  }
+  .notice b { color: var(--brand-deep); }
+  h2 {
+    font-size: 17px; font-weight: 700; margin: 30px 0 6px;
+    padding-left: 12px; border-left: 4px solid var(--brand);
+  }
+  h2 .no {
+    display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px;
+    border-radius: 50%; background: var(--brand); color: #fff; font-size: 13px; vertical-align: -3px;
+  }
+  .hint { font-size: 12.5px; color: var(--ink-3); margin-bottom: 12px; padding-left: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: #f2f5fb; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  td.q { width: 42%; color: var(--ink-2); }
+  td.a { height: 44px; color: var(--ink-3); }
+  td.a .placeholder { color: #c3cbd9; font-size: 12px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 10px; }
+  .card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: #fbfcfe; }
+  .card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .card p { font-size: 12.5px; color: var(--ink-2); }
+  .checkbox-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .checkbox-row span {
+    font-size: 12px; padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--ink-2); background: #fbfcfe;
+  }
+  .checkbox-row span b { color: var(--brand-deep); }
+  .sign-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
+  .footer {
+    padding: 20px 48px 30px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; border-radius: 0; max-width: none; }
+    .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    h2 { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    td.a { height: 40px; }
+  }
+  @media (max-width: 640px) {
+    .hero, .body, .footer { padding-left: 20px; padding-right: 20px; }
+    .grid2, .sign-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="brand-row">
+      <div class="logo">A</div>
+      <div>
+        <div class="brand-name">AgentNexus</div>
+        <div class="brand-tag">企业 Agent 互联平台</div>
+      </div>
+    </div>
+    <h1>企业全能助理 · 信息收集表</h1>
+    <p>为了让您的专属智能助理（秘书 + 客服 + 销售）一次配置到位，请 IT 与业务双方共同填写本表并回传。全部内容仅用于助理配置，双方可另行签署保密协议。</p>
+    <div class="hero-badges">
+      <span>填写耗时约 30 分钟</span><span>IT 与业务各填一半</span><span>回传后 1~2 天交付</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="notice">
+      <b>填写说明：</b>带 <b>*</b> 为必填；不确定的条目可先留空并在回传时备注，我们会在 30 分钟对齐会上逐条确认。
+    </div>
+
+    <h2><span class="no">1</span>企业与助理定位 *</h2>
+    <div class="hint">业务负责人填写：决定助理在平台上的身份与首要职责</div>
+    <table>
+      <tr><td class="q">企业名称 *</td><td class="a"></td></tr>
+      <tr><td class="q">助理名称（对外展示，如「小帆助理」）*</td><td class="a"></td></tr>
+      <tr><td class="q">主要服务对象（内部员工 / 外部客户 / 两者）*</td><td class="a"></td></tr>
+      <tr><td class="q">预计日均消息量（条/天）</td><td class="a"><span class="placeholder">例：200 条以内 / 200–1000 / 1000 以上</span></td></tr>
+      <tr><td class="q">最希望助理先胜任的一件事 *</td><td class="a"><span class="placeholder">例：先做好产品咨询应答，两周后再开销售线索登记</span></td></tr>
+    </table>
+
+    <h2><span class="no">2</span>知识库现状（客服能力）*</h2>
+    <div class="hint">业务负责人填写：FAQ 与标准答案从哪里来</div>
+    <table>
+      <tr><td class="q">知识库文档来源与格式 *</td><td class="a"><span class="placeholder">例：Word 产品手册 3 份 / 客服 FAQ Excel / 无，需协助整理</span></td></tr>
+      <tr><td class="q">高频问题 Top 5（尽量列举）*</td><td class="a"><span class="placeholder">例：退货政策？保修几年？发货时效？</span></td></tr>
+      <tr><td class="q">知识库更新频率与更新人</td><td class="a"></td></tr>
+      <tr><td class="q">标准答复中不可承诺的内容（合规红线）</td><td class="a"><span class="placeholder">例：不可承诺具体赔偿金额</span></td></tr>
+    </table>
+
+    <h2><span class="no">3</span>秘书服务范围（秘书能力）</h2>
+    <div class="hint">行政/IT 共同填写：不启用秘书能力可整节跳过</div>
+    <table>
+      <tr><td class="q">工作时间与工作日 *</td><td class="a"><span class="placeholder">例：工作日 09:00–18:00</span></td></tr>
+      <tr><td class="q">可预约事项（会议 / 演示 / 上门服务…）</td><td class="a"><span class="placeholder">例：产品演示会议、售后上门</span></td></tr>
+      <tr><td class="q">现有日历 / 会议系统（如企微、钉钉、Outlook）</td><td class="a"></td></tr>
+      <tr><td class="q">该系统是否提供开放 API？（有 / 无 / 不确定）</td><td class="a"></td></tr>
+    </table>
+
+    <h2><span class="no">4</span>销售资料（销售能力）</h2>
+    <div class="hint">销售负责人填写：不启用销售能力可整节跳过</div>
+    <table>
+      <tr><td class="q">产品目录（名称 + 一句话卖点 + 价格区间）</td><td class="a"><span class="placeholder">例：智能会议屏 V5｜4K 触控内置投屏｜¥8,999 起</span></td></tr>
+      <tr><td class="q">对外报价口径与折扣权限</td><td class="a"><span class="placeholder">例：助理只报目录价，折扣一律转人工</span></td></tr>
+      <tr><td class="q">现有 CRM 系统名称与版本</td><td class="a"></td></tr>
+      <tr><td class="q">CRM 是否提供开放 API？（有 / 无 / 不确定）</td><td class="a"></td></tr>
+      <tr><td class="q">线索必填字段（姓名 / 电话 / 意向产品…）</td><td class="a"></td></tr>
+    </table>
+
+    <h2><span class="no">5</span>数据源与权限</h2>
+    <div class="hint">IT 负责人填写：决定助理能读什么、能写什么</div>
+    <table>
+      <tr><td class="q">允许助理读取的系统与数据</td><td class="a"></td></tr>
+      <tr><td class="q">允许助理写入的系统与操作</td><td class="a"><span class="placeholder">例：仅允许创建工单与线索，禁止改动订单</span></td></tr>
+      <tr><td class="q">明确禁止接触的数据</td><td class="a"></td></tr>
+    </table>
+
+    <h2><span class="no">6</span>模型与预算</h2>
+    <div class="hint">IT 负责人填写：不配置 LLM 也能交付（纯规则引擎）</div>
+    <table>
+      <tr><td class="q">LLM 选择（OpenAI 兼容 API / 国产模型 / 私有化部署 / 暂不配置）*</td><td class="a"></td></tr>
+      <tr><td class="q">API Key 提供方式与月度预算上限</td><td class="a"></td></tr>
+      <tr><td class="q">数据是否允许出企业内网？*</td><td class="a"><span class="placeholder">涉及私有化部署方案选型，必填</span></td></tr>
+    </table>
+
+    <h2><span class="no">7</span>部署环境</h2>
+    <div class="hint">IT 负责人填写</div>
+    <table>
+      <tr><td class="q">服务器：内网物理机 / 云主机（配置、操作系统）*</td><td class="a"><span class="placeholder">最低 2 核 4G，Linux x64，可运行 Docker</span></td></tr>
+      <tr><td class="q">服务器能否访问外网（拉取镜像 / 调用模型 API）*</td><td class="a"></td></tr>
+      <tr><td class="q">访问域名与 HTTPS 证书（有 / 无 / 需协助）</td><td class="a"></td></tr>
+      <tr><td class="q">防火墙：需开放的端口（默认 80/443/3000）</td><td class="a"></td></tr>
+    </table>
+
+    <h2><span class="no">8</span>安全与合规</h2>
+    <div class="hint">IT 负责人填写</div>
+    <table>
+      <tr><td class="q">行业合规要求（等保级别 / 行业监管）</td><td class="a"></td></tr>
+      <tr><td class="q">对话数据保留期限与审计要求</td><td class="a"></td></tr>
+      <tr><td class="q">其他安全红线</td><td class="a"></td></tr>
+    </table>
+
+    <h2><span class="no">9</span>对接人 *</h2>
+    <div class="hint">双方各指定一名，验收与联调以他们为准</div>
+    <div class="sign-row">
+      <div class="card"><h3>业务对接人</h3><p>姓名 / 职务：<br><br>电话 / 邮箱：</p></div>
+      <div class="card"><h3>IT 对接人</h3><p>姓名 / 职务：<br><br>电话 / 邮箱：</p></div>
+      <div class="card"><h3>最终验收人</h3><p>姓名 / 职务：<br><br>电话 / 邮箱：</p></div>
+    </div>
+
+    <h2><span class="no">10</span>确认与回传</h2>
+    <table>
+      <tr><th style="width:30%">回传方式</th><td>发送至实施顾问邮箱，或按对方指示上传至指定位置</td></tr>
+      <tr><th>期望交付时间</th><td>回传后 ______ 个工作日内上线首版</td></tr>
+      <tr><th>保密约定</th><td>☐ 双方已签署 / 邮件确认保密义务</td></tr>
+      <tr><th>填写人签字 / 日期</th><td>业务：____________　　IT：____________</td></tr>
+    </table>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>回传之后会发生什么</h3>
+        <p>① 30 分钟对齐会逐条确认 → ② 我们把答案填入助理的两个配置文件 → ③ 平台部署与助理注册 → ④ 五步验收报告（可打印）→ ⑤ 培训与移交。</p>
+      </div>
+      <div class="card">
+        <h3>本表对应的技术映射</h3>
+        <p>第 2 节 → knowledge.mjs 的 FAQ 库；第 3 节 → 秘书规则；第 4 节 → 产品报价库与 CRM 对接；第 5–8 节 → 部署与安全配置（AUTH_MODE=strict、CORS 收紧、密钥轮换）。</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>AgentNexus · 企业全能助理交付套件（MIT 开源）</span>
+    <span>配套模板：kits/assistant-agent/template-agent · 验收：scripts/deploy-verify.mjs</span>
+  </div>
+
+</div>
+</body>
+</html>

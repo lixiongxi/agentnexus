@@ -10,6 +10,8 @@ build/
 .env.*
 !.env.example
 **/scripts/demo-credential.json
+# Agent 运行时密钥缓存与验收报告（含 sk_ 注册密钥，绝不入库）
+.state/
 
 # SQLite 运行数据（schema 由 prisma 管理，数据不入库）
 *.db
