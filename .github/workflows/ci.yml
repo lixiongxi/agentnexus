@@ -13,6 +13,13 @@ jobs:
     defaults:
       run:
         working-directory: server
+    env:
+      # CI 专用配置：仓库不提交 .env，此处提供最小可运行环境
+      DATABASE_URL: "file:./ci.db"
+      AUTH_MODE: strict
+      SESSION_SECRET: ci-only-session-secret-not-for-production
+      ADMIN_TOKEN: ci-only-admin-token-not-for-production
+      CORS_ORIGIN: "*"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
