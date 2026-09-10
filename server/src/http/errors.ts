@@ -5,6 +5,8 @@
  * 未预期异常一律降级为 500 且**不回显内部堆栈**（v1 会把异常原文直接返回给客户端）。
  */
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import fs from "node:fs";
+import path from "node:path";
 import { config } from "../core/config";
 import { ErrorCode, isAppError } from "../core/errors";
 import { fail, ok } from "../core/response";
@@ -44,6 +46,20 @@ export function registerErrorHandlers(app: FastifyInstance): void {
   });
 
   app.setNotFoundHandler((req: FastifyRequest, reply: FastifyReply) => {
+    // SPA 回退：同源托管前端时，非 API 路径的 GET 一律回 index.html（React Router 前端路由）
+    const staticRoot = (app as unknown as { staticRoot?: string }).staticRoot;
+    const url = req.raw.url ?? "";
+    const isReserved =
+      url.startsWith("/api") ||
+      url.startsWith("/health") ||
+      url.startsWith("/ws") ||
+      url.startsWith("/.well-known");
+    if (staticRoot && req.method === "GET" && !isReserved) {
+      const indexHtml = path.join(staticRoot, "index.html");
+      if (fs.existsSync(indexHtml)) {
+        return (reply as FastifyReply & { sendFile: (name: string) => unknown }).sendFile("index.html");
+      }
+    }
     return reply.code(404).send(fail(ErrorCode.NOT_FOUND, `接口不存在：${req.method} ${req.url}`));
   });
 }

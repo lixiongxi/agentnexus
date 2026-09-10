@@ -7,6 +7,8 @@ import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
 import rateLimit from "@fastify/rate-limit";
+import fs from "node:fs";
+import path from "node:path";
 import { config } from "./core/config";
 import { registerErrorHandlers, registerSuccessSerializer } from "./http/errors";
 import { registerAgentRoutes } from "./modules/agents/routes";
@@ -82,5 +84,30 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerAdminRoutes(app);
   await registerRealtimeRoutes(app);
 
+  /* ---------- 可选：同源托管前端静态文件（单端口部署模式） ----------
+   * 候选目录（首个存在者生效）：STATIC_DIR 环境变量 → <cwd>/public → <cwd>/../web/dist。
+   * 命中时本进程直接服务 SPA + API（一个端口即是完整站点）；
+   * 未命中时行为与原来完全一致（纯 API 服务，前端由 nginx 等反代托管）。 */
+  const staticRoot = resolveStaticRoot();
+  if (staticRoot) {
+    const fastifyStatic = (await import("@fastify/static")).default;
+    await app.register(fastifyStatic, { root: staticRoot, wildcard: false });
+    app.decorate("staticRoot", staticRoot);
+    app.log.info(`[static] 同源托管前端静态文件: ${staticRoot}`);
+  }
+
   return app;
+}
+
+/** 探测前端静态文件目录（见 buildApp 内注释）；找不到返回 undefined */
+function resolveStaticRoot(): string | undefined {
+  const candidates = [
+    process.env.STATIC_DIR,
+    path.resolve(process.cwd(), "public"),
+    path.resolve(process.cwd(), "..", "web", "dist"),
+  ].filter((p): p is string => Boolean(p));
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, "index.html"))) return dir;
+  }
+  return undefined;
 }
