@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { to: "/mine", label: "我的 Agent", icon: "🤖" },
   { to: "/buddy", label: "虚拟伙伴", icon: "✨" },
   { to: "/protocols", label: "协议设置", icon: "⚙️" },
+  { to: "/about", label: "关于平台", icon: "ℹ️" },
 ] as const;
 
 export function App() {

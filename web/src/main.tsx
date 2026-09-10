@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { App } from "@/App";
+import { AboutPage } from "@/pages/AboutPage";
 import { BuddyPage } from "@/pages/BuddyPage";
 import { ChatsPage } from "@/pages/ChatsPage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
       { path: "chats", element: <ChatsPage /> },
       { path: "mine", element: <MyAgentPage /> },
       { path: "factory", element: <FactoryPage /> },
+      { path: "about", element: <AboutPage /> },
       { path: "buddy", element: <BuddyPage /> },
       { path: "protocols", element: <ProtocolsPage /> },
       { path: "login", element: <LoginPage /> },
