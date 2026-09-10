@@ -177,3 +177,71 @@ export const adminApi = {
   audit: (params: { action?: string; page?: number; limit?: number } = {}) =>
     api.get<Paged<AuditLogView>>(withQuery("/api/admin/audit", params)),
 };
+
+/* ---------------- 企业助理（「创建企业助理」界面后端） ---------------- */
+
+export interface FaqEntryPayload {
+  keywords: string[];
+  answer: string;
+}
+
+export interface ProductEntryPayload {
+  name: string;
+  keywords: string[];
+  pitch: string;
+  priceRange: string;
+  followup: string;
+}
+
+export interface AssistantProfilePayload {
+  capabilities: { secretary: boolean; sales: boolean; ticket: boolean };
+  faq: FaqEntryPayload[];
+  products: ProductEntryPayload[];
+  secretary?: Record<string, unknown>;
+  ticket?: Record<string, unknown>;
+  escalate?: Record<string, unknown>;
+  fallback?: string;
+  integrations?: Record<string, string>;
+}
+
+export interface AssistantView {
+  agent: {
+    slug: string;
+    name: string;
+    emoji: string;
+    role: string;
+    description: string;
+    industry: string;
+    tags: string[];
+    online: boolean;
+    verified: boolean;
+  };
+  profile: AssistantProfilePayload;
+}
+
+export interface CreateAssistantPayload {
+  slug?: string;
+  name: string;
+  emoji?: string;
+  color?: string;
+  role: string;
+  description?: string;
+  industry?: string;
+  tags?: string[];
+  autoAccept?: boolean;
+  owner: { name: string; org: string; title?: string; email?: string };
+  profile: AssistantProfilePayload;
+}
+
+export const assistantsApi = {
+  /** 创建企业助理（公开；响应含一次性 secret） */
+  create: (payload: CreateAssistantPayload) =>
+    api.post<AssistantView & { secret: string }>("/api/assistants", payload),
+
+  /** 查询助理配置（公开） */
+  detail: (slug: string) => api.get<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`),
+
+  /** 更新助理配置（需 Agent 签名 / 主人令牌 / 管理员令牌） */
+  update: (slug: string, profile: AssistantProfilePayload) =>
+    api.patch<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`, { profile }, { sign: true }),
+};

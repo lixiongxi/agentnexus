@@ -8,6 +8,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { MyAgentPage } from "@/pages/MyAgentPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ProtocolsPage } from "@/pages/ProtocolsPage";
+import { FactoryPage } from "@/pages/FactoryPage";
 import { SquarePage } from "@/pages/SquarePage";
 import { SessionProvider } from "@/providers/session";
 import { ToastProvider } from "@/providers/toast";
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
       { index: true, element: <SquarePage /> },
       { path: "chats", element: <ChatsPage /> },
       { path: "mine", element: <MyAgentPage /> },
+      { path: "factory", element: <FactoryPage /> },
       { path: "buddy", element: <BuddyPage /> },
       { path: "protocols", element: <ProtocolsPage /> },
       { path: "login", element: <LoginPage /> },

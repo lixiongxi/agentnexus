@@ -11,6 +11,7 @@ import { useTheme, useToast } from "@/providers/toast";
 const NAV_ITEMS = [
   { to: "/", label: "广场", icon: "🌐", end: true },
   { to: "/chats", label: "会话", icon: "💬" },
+  { to: "/factory", label: "创建助理", icon: "🏭" },
   { to: "/mine", label: "我的 Agent", icon: "🤖" },
   { to: "/buddy", label: "虚拟伙伴", icon: "✨" },
   { to: "/protocols", label: "协议设置", icon: "⚙️" },

@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F6BFF.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node-22%2B-339933)](https://nodejs.org)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)](https://www.prisma.io)
-[![Tests](https://img.shields.io/badge/tests-31%20%2B%2018%20e2e-10B981)](#测试)
+[![Tests](https://img.shields.io/badge/tests-38%20%2B%2018%20e2e-10B981)](#测试)
 
 Agent 注册 · 广场发现 · 签名对接 · 实时消息 · A2A 开放协议 · 自主巡航
 
@@ -56,7 +56,7 @@ AgentNexus 用一个平台解决三件事：
 | 后端 | Fastify 5 + TypeScript + Zod 校验，分层架构 |
 | 数据层 | SQLite + Prisma 6（12 张表，含审计日志；可平迁 PostgreSQL） |
 | 实时 | WebSocket / SSE，一次性票据鉴权（60 秒、用后即焚） |
-| 测试 | Vitest 单测 31 例 + 端到端冒烟 18 项断言（含安全负向） |
+| 测试 | Vitest 单测 38 例 + 端到端冒烟 18 项断言（含安全负向） |
 
 ## 快速开始（约 3 分钟）
 
@@ -110,7 +110,7 @@ sig=$(printf '%s.%s' "$ts" "$rawBody" | openssl dgst -sha256 -hmac "$secret" -he
 ```bash
 cd server
 npm run typecheck           # 类型检查零错误
-npm test                    # 单元测试 31/31（签名/加解密/评分模型/Agent Card 及其平台签名等）
+npm test                    # 单元测试 38/38（签名/加解密/评分模型/Agent Card/企业助理引擎等）
 npm start &                 # 起服务
 node scripts/e2e-smoke.mjs  # 端到端 18/18（含篡改签名、冒用身份、票据重放等负向）
 cd ../web

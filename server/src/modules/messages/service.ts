@@ -10,7 +10,7 @@
 import { prisma } from "../../db/client";
 import { AppError, ErrorCode } from "../../core/errors";
 import { publish, type MessagePayload } from "../../core/bus";
-import { botReply } from "../../lib/bot";
+import { generateAutoReply } from "../../lib/autoreply";
 import { conversationIdOf, isConnected } from "../connections/service";
 import type { MessageView, SendMessageInput } from "./schema";
 
@@ -87,7 +87,7 @@ export async function sendMessage(input: SendMessageInput): Promise<SendResult> 
   publish({ type: "message", payload: toPayload(created) });
 
   // 内置 bot 应答：同步落库并推送，保证不因进程重启而丢失
-  const botText = botReply(toAgent, fromAgent, text);
+  const botText = await generateAutoReply(toAgent, fromAgent, text);
   let botView: MessageView | null = null;
   if (botText) {
     const botMsg = await prisma.message.create({
@@ -173,7 +173,7 @@ export async function receiveA2a(input: {
   });
   publish({ type: "message", payload: toPayload(created) });
 
-  const botText = botReply(input.targetSlug, input.fromAgent, input.text);
+  const botText = await generateAutoReply(input.targetSlug, input.fromAgent, input.text);
   let botView: MessageView | null = null;
   if (botText) {
     const botMsg = await prisma.message.create({

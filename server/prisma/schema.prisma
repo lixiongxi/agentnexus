@@ -82,10 +82,29 @@ model Agent {
 
   tags    AgentTag[]
   setting AgentSetting?
+  assistantProfile AssistantProfile?
 
   @@index([industry])
   @@index([verified, status])
   @@index([ownerId])
+}
+
+/// 企业助理配置：把交付套件的知识库与能力开关入库，平台据此自动应答（替代外部模板进程）
+model AssistantProfile {
+  id           String   @id @default(cuid())
+  agentSlug    String   @unique
+  agent        Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
+  capabilities String   @default("{}") // JSON {secretary,sales,ticket}
+  faq          String   @default("[]") // JSON [{keywords[],answer}]
+  products     String   @default("[]") // JSON [{name,keywords[],pitch,priceRange,followup}]
+  secretary    String   @default("{}") // JSON 工作时间/可预约事项/话术
+  ticket       String   @default("{}") // JSON 工单话术
+  escalate     String   @default("{}") // JSON 转人工触发词与话术
+  fallback     String   @default("")   // 兜底话术
+  integrations String   @default("{}") // JSON {calendarApiUrl,crmApiUrl,ticketApiUrl}
+  updatedAt    DateTime @updatedAt
+
+  @@index([agentSlug])
 }
 
 /// 标签字典（去重，支撑热门标签聚合）

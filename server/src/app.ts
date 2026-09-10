@@ -19,6 +19,7 @@ import { registerAutopilotRoutes } from "./modules/autopilot/routes";
 import { registerAuthRoutes } from "./modules/auth/routes";
 import { registerAdminRoutes } from "./modules/admin/routes";
 import { registerRealtimeRoutes } from "./modules/realtime/routes";
+import { registerAssistantRoutes } from "./modules/assistants/routes";
 import { registerSystemRoutes } from "./modules/system/routes";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -83,6 +84,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerAutopilotRoutes(app);
   await registerAdminRoutes(app);
   await registerRealtimeRoutes(app);
+  await registerAssistantRoutes(app);
 
   /* ---------- 可选：同源托管前端静态文件（单端口部署模式） ----------
    * 候选目录（首个存在者生效）：STATIC_DIR 环境变量 → <cwd>/public → <cwd>/../web/dist。
