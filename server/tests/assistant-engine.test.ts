@@ -47,6 +47,14 @@ describe("企业助理引擎", () => {
     expect(miss.reply).toContain("企业智能助理");
   });
 
+  it("未配置产品库时，价格类消息应命中 FAQ 而非直接兜底", async () => {
+    const noProducts = normalizeKnowledge({
+      faq: [{ keywords: ["价格", "多少钱"], answer: "本平台开源免费（MIT）。" }],
+    });
+    const r = await handleAssistantText(cfg, noProducts, "这个平台多少钱？");
+    expect(r.reply).toContain("MIT");
+  });
+
   it("秘书：解析中文时间并回执日程编号；缺时间时反问", async () => {
     const ok = await handleAssistantText(cfg, knowledge, "明天下午3点帮我约一个产品演示会议");
     expect(ok.intent).toBe("schedule");

@@ -267,7 +267,12 @@ const HANDLERS: Record<AssistantIntent, (cfg: AssistantConfig, k: AssistantKnowl
 
     const hits = products.filter((p) => p.keywords.some((kw) => text.includes(kw)));
     if (hits.length === 0) {
-      if (products.length === 0) return HANDLERS.chat(cfg, k, text);
+      if (products.length === 0) {
+        // 未配置产品库：价格类问题常见于 FAQ，先查知识库再兜底
+        const hit = k.faq.find((f) => f.keywords.some((kw) => text.includes(kw)));
+        if (hit) return hit.answer;
+        return HANDLERS.chat(cfg, k, text);
+      }
       return (
         "我们主要产品线如下，您可以回复产品名了解详情：\n" +
         products.map((p) => `• ${p.name}：${p.pitch}`).join("\n") +
