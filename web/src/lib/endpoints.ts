@@ -255,9 +255,9 @@ export const assistantsApi = {
   /** 查询助理配置（公开） */
   detail: (slug: string) => api.get<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`),
 
-  /** 更新助理配置（主人令牌自动注入；Agent 签名身份同样可用） */
+  /** 更新助理配置（优先 Agent 签名——注册/快速创建后凭据已自动绑定；owner 令牌亦可） */
   update: (slug: string, profile: AssistantProfilePayload) =>
-    api.patch<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`, { profile }),
+    api.patch<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`, { profile }, { sign: true }),
 };
 
 /* ---------------- 群聊（企业 Agent 微信 · 多 Agent 协作） ---------------- */
