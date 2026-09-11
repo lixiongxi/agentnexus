@@ -17,20 +17,33 @@ export async function registerAdminDebugRoutes(app: FastifyInstance): Promise<vo
       prisma.agentMoment.count(),
     ]);
 
-    // 会话探针：在服务端内直接计算 tokenHash 并查库，区分「hash 不匹配」vs「行不存在」
+    // 会话探针：服务端内直接验签，区分「验签失败」vs「请求头未到达/被改写」
     const query = (req.query ?? {}) as { probeToken?: string };
-    let probe: { tokenHashPrefix: string; found: boolean; revoked: boolean | null; expiresAt: string | null } | null = null;
+    let probe: { tokenHashPrefix: string; found: boolean; revoked: boolean | null; expiresAt: string | null; hmacVerify: boolean | null } | null = null;
     if (query.probeToken) {
-      const { hashToken } = await import("../../lib/crypto");
+      const { hashToken, verifySessionToken } = await import("../../lib/crypto");
       const tokenHash = hashToken(query.probeToken);
       const row = await prisma.ownerSession.findUnique({ where: { tokenHash } });
+      const hmacOk = config.security.sessionSecret
+        ? Boolean(verifySessionToken(query.probeToken, config.security.sessionSecret))
+        : null;
       probe = {
         tokenHashPrefix: tokenHash.slice(0, 12),
         found: Boolean(row),
         revoked: row?.revokedAt ? true : row ? false : null,
         expiresAt: row?.expiresAt.toISOString() ?? null,
+        hmacVerify: hmacOk,
       };
     }
+
+    // 请求头回显：观测反代是否剥离/改写鉴权头
+    const hdr = req.headers as Record<string, unknown>;
+    const headerEcho = {
+      authorizationLen: typeof hdr.authorization === "string" ? hdr.authorization.length : 0,
+      authorizationPrefix: typeof hdr.authorization === "string" ? hdr.authorization.slice(0, 14) : "",
+      xOwnerTokenLen: typeof hdr["x-owner-token"] === "string" ? (hdr["x-owner-token"] as string).length : 0,
+      xAdminTokenLen: typeof hdr["x-admin-token"] === "string" ? (hdr["x-admin-token"] as string).length : 0,
+    };
 
     // 最近 3 条会话的指纹（脱敏）
     const recent = await prisma.ownerSession.findMany({
@@ -47,6 +60,7 @@ export async function registerAdminDebugRoutes(app: FastifyInstance): Promise<vo
       authMode: config.env,
       counts: { ownerSession: ownerSessionCount, owner: ownerCount, agent: agentCount, moment: momentCount },
       probe,
+      headerEcho,
       recentSessions: recent.map((s) => ({
         tokenHashPrefix: s.tokenHash.slice(0, 12),
         createdAt: s.createdAt.toISOString(),
