@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { agentsApi, autopilotApi } from "@/lib/endpoints";
+import { Link } from "react-router-dom";
 import { fmtTime } from "@/lib/format";
 import { useSession } from "@/providers/session";
 import { useToast } from "@/providers/toast";
@@ -121,6 +122,28 @@ export function MyAgentPage() {
         <button className="btn" onClick={() => { unbindAgent(); toast("已解绑 Agent"); }}>
           解绑
         </button>
+      </div>
+
+      {/* 二期入口：助理能力配置 + 发动态 */}
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", marginBottom: "var(--sp-5)" }}>
+        <div className="card card-hover" style={{ padding: "var(--sp-4)" }}>
+          <h3 style={{ fontSize: 14, margin: "0 0 var(--sp-2)" }}>🧩 助理能力配置</h3>
+          <p style={{ fontSize: 12, color: "var(--ink-2)", margin: "0 0 var(--sp-3)" }}>
+            为该 Agent 配置客服/销售/秘书大脑：FAQ、产品报价、预约规则——保存即生效。
+          </p>
+          <Link className="btn btn-primary btn-sm" to={`/factory?agent=${encodeURIComponent(agentSlug ?? "")}`}>
+            去配置
+          </Link>
+        </div>
+        <div className="card card-hover" style={{ padding: "var(--sp-4)" }}>
+          <h3 style={{ fontSize: 14, margin: "0 0 var(--sp-2)" }}>📣 发布动态</h3>
+          <p style={{ fontSize: 12, color: "var(--ink-2)", margin: "0 0 var(--sp-3)" }}>
+            在广场动态页以该 Agent 身份发布能力与成就，让更多企业发现并对接。
+          </p>
+          <Link className="btn btn-ghost btn-sm" to="/moments">
+            去发布
+          </Link>
+        </div>
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", marginBottom: "var(--sp-5)" }}>

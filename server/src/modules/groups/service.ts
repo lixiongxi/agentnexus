@@ -9,6 +9,7 @@
  *   - 消息文本中 @slug 且该 slug 存在助理配置（AssistantProfile）时，
  *     由 generateAutoReply 生成 type="bot" 回复（循环防护：bot 与助理自身消息不再触发）
  */
+import crypto from "node:crypto";
 import { prisma } from "../../db/client";
 import { AppError, ErrorCode } from "../../core/errors";
 import { publish } from "../../core/bus";
@@ -214,6 +215,30 @@ export async function sendGroupMessage(me: string, groupId: string, text: string
   const view = toMessageView(created);
   publish({ type: "group-message", payload: view });
 
+  // 任务分派（优先级高于 @助理）：命中即建任务，不再触发助理引擎
+  const taskCmd = parseTaskCommand(text);
+  if (taskCmd) {
+    try {
+      const task = await createTask(me, groupId, taskCmd.assignee, taskCmd.title);
+      const card = await prisma.groupMessage.create({
+        data: {
+          groupId,
+          fromAgent: me,
+          text: `📋 任务 ${task.taskCode} 已创建：${task.title}\n指派给 @${task.assigneeSlug}（状态：待处理）`,
+          type: "bot",
+        },
+      });
+      publish({ type: "group-message", payload: toMessageView(card) });
+    } catch (err: unknown) {
+      const reason = err instanceof AppError ? err.message : "创建失败";
+      const errMsg = await prisma.groupMessage.create({
+        data: { groupId, fromAgent: me, text: `⚠️ 任务创建失败：${reason}`, type: "bot" },
+      });
+      publish({ type: "group-message", payload: toMessageView(errMsg) });
+    }
+    return view;
+  }
+
   // @助理应答：显式 @ 才触发；bot 回复直接落库，不再二次触发引擎（防循环）
   const mentions = extractMentions(text).filter((slug) => slug !== me);
   for (const slug of mentions) {
@@ -242,4 +267,103 @@ export async function listGroupMessages(
     take: Math.min(Math.max(limit, 1), 200),
   });
   return rows.reverse().map(toMessageView);
+}
+
+/* ---------------- 群任务分派（二期） ---------------- */
+
+/** 任务状态机：open→working→done|failed；working→done|failed；其余流转非法 */
+export const TASK_TRANSITIONS: Record<string, string[]> = {
+  open: ["working", "done", "failed"],
+  working: ["done", "failed"],
+  done: [],
+  failed: [],
+};
+
+/**
+ * 解析群消息中的任务指令（优先级高于 @助理，命中即不触发引擎）。
+ * 支持两种写法：`@成员slug 任务[:：]描述` 或 `任务[:：]@成员slug 描述`。
+ */
+export function parseTaskCommand(text: string): { assignee: string; title: string } | null {
+  const m1 = text.match(/(?:^|\s)@([a-z0-9][a-z0-9-]{1,39})\s*任务\s*[:：]\s*(.+)/);
+  if (m1?.[1] && m1[2]) return { assignee: m1[1], title: m1[2].trim().slice(0, 200) };
+  const m2 = text.match(/任务\s*[:：]\s*@([a-z0-9][a-z0-9-]{1,39})\s+(.+)/);
+  if (m2?.[1] && m2[2]) return { assignee: m2[1], title: m2[2].trim().slice(0, 200) };
+  return null;
+}
+
+function newTaskCode(): string {
+  return `TSK-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+}
+
+async function assertTaskMember(groupId: string, agentSlug: string): Promise<void> {
+  await assertMembership(groupId, agentSlug);
+  await assertActiveAgent(agentSlug);
+}
+
+/** 创建群任务（创建者与被指派人都必须是群成员） */
+export async function createTask(
+  me: string,
+  groupId: string,
+  assigneeSlug: string,
+  title: string,
+): Promise<{ id: string; taskCode: string; title: string; assigneeSlug: string; status: string }> {
+  if (!title.trim()) throw new AppError(ErrorCode.VALIDATION_ERROR, "任务标题不能为空");
+  if (assigneeSlug === me) throw new AppError(ErrorCode.VALIDATION_ERROR, "不能把任务指派给自己");
+  await assertMembership(groupId, me);
+  await assertTaskMember(groupId, assigneeSlug);
+
+  return prisma.groupTask.create({
+    data: { groupId, taskCode: newTaskCode(), title: title.trim(), assigneeSlug, creatorSlug: me },
+  });
+}
+
+/** 群任务列表（可按状态筛选） */
+export async function listTasks(
+  me: string,
+  groupId: string,
+  status?: string,
+): Promise<
+  Array<{ id: string; taskCode: string; title: string; assigneeSlug: string; creatorSlug: string; status: string; createdAt: string; updatedAt: string }>
+> {
+  await assertMembership(groupId, me);
+  const rows = await prisma.groupTask.findMany({
+    where: { groupId, ...(status ? { status } : {}) },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+  return rows.map((t) => ({
+    id: t.id,
+    taskCode: t.taskCode,
+    title: t.title,
+    assigneeSlug: t.assigneeSlug,
+    creatorSlug: t.creatorSlug,
+    status: t.status,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+  }));
+}
+
+/** 任务状态流转：仅创建者/被指派人可调，非法流转 400 */
+export async function updateTaskStatus(me: string, groupId: string, taskId: string, nextStatus: string) {
+  await assertMembership(groupId, me);
+  const task = await prisma.groupTask.findUnique({ where: { id: taskId } });
+  if (!task || task.groupId !== groupId) throw new AppError(ErrorCode.NOT_FOUND, "任务不存在");
+  if (task.creatorSlug !== me && task.assigneeSlug !== me) {
+    throw new AppError(ErrorCode.FORBIDDEN, "仅任务创建者或被指派人可以更新状态");
+  }
+  const allowed = TASK_TRANSITIONS[task.status] ?? [];
+  if (!allowed.includes(nextStatus)) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, `不允许的状态流转：${task.status} → ${nextStatus}`);
+  }
+  const updated = await prisma.groupTask.update({ where: { id: taskId }, data: { status: nextStatus } });
+  return {
+    id: updated.id,
+    taskCode: updated.taskCode,
+    title: updated.title,
+    assigneeSlug: updated.assigneeSlug,
+    creatorSlug: updated.creatorSlug,
+    status: updated.status,
+    createdAt: updated.createdAt.toISOString(),
+    updatedAt: updated.updatedAt.toISOString(),
+  };
 }

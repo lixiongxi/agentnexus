@@ -20,3 +20,13 @@ export const groupMessageSchema = z.object({
 
 export type CreateGroupInput = z.infer<typeof createGroupSchema>;
 export type AddGroupMembersInput = z.infer<typeof addGroupMembersSchema>;
+
+/** 群任务 */
+export const createTaskSchema = z.object({
+  assigneeSlug: slugSchema,
+  title: z.string().min(1, "任务标题必填").max(200),
+});
+
+export const updateTaskStatusSchema = z.object({
+  status: z.enum(["open", "working", "done", "failed"]),
+});

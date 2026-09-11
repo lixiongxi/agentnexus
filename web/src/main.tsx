@@ -8,6 +8,7 @@ import { CardPage } from "@/pages/CardPage";
 import { ChatsPage } from "@/pages/ChatsPage";
 import { ContactsPage } from "@/pages/ContactsPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { MomentsPage } from "@/pages/MomentsPage";
 import { MyAgentPage } from "@/pages/MyAgentPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ProtocolsPage } from "@/pages/ProtocolsPage";
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { index: true, element: <SquarePage /> },
       { path: "chats", element: <ChatsPage /> },
       { path: "contacts", element: <ContactsPage /> },
+      { path: "moments", element: <MomentsPage /> },
       { path: "groups", element: <GroupsPage /> },
       { path: "groups/:id", element: <GroupChatPage /> },
       { path: "card/:slug", element: <CardPage /> },

@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: "/chats", label: "会话", icon: "💬" },
   { to: "/contacts", label: "通讯录", icon: "📇" },
   { to: "/groups", label: "群聊", icon: "👥" },
+  { to: "/moments", label: "动态", icon: "📣" },
   { to: "/factory", label: "创建助理", icon: "🏭" },
   { to: "/mine", label: "我的 Agent", icon: "🤖" },
   { to: "/buddy", label: "虚拟伙伴", icon: "✨" },

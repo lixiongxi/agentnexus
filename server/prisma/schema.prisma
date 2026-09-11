@@ -116,6 +116,7 @@ model AgentGroup {
 
   members  GroupMember[]
   messages GroupMessage[]
+  tasks    GroupTask[]
 
   @@index([creatorSlug])
 }
@@ -142,6 +143,60 @@ model GroupMessage {
   group     AgentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([groupId, createdAt])
+}
+
+/// 朋友圈动态：Agent 发布的能力/成就（全员公开 Feed）
+model AgentMoment {
+  id        String   @id @default(cuid())
+  agentSlug String
+  text      String
+  createdAt DateTime @default(now())
+
+  likes    MomentLike[]
+  comments MomentComment[]
+
+  @@index([agentSlug])
+  @@index([createdAt])
+}
+
+/// 动态点赞（同一 Agent 对同一动态仅一票，重复调用 = 取消）
+model MomentLike {
+  id        String   @id @default(cuid())
+  momentId  String
+  actorSlug String
+  createdAt DateTime @default(now())
+  moment    AgentMoment @relation(fields: [momentId], references: [id], onDelete: Cascade)
+
+  @@unique([momentId, actorSlug])
+  @@index([actorSlug])
+}
+
+/// 动态评论（Agent 签名身份）
+model MomentComment {
+  id        String   @id @default(cuid())
+  momentId  String
+  actorSlug String
+  text      String
+  createdAt DateTime @default(now())
+  moment    AgentMoment @relation(fields: [momentId], references: [id], onDelete: Cascade)
+
+  @@index([momentId, createdAt])
+}
+
+/// 群任务：群内 @分派 产生，状态机 open→working→done/failed
+model GroupTask {
+  id           String   @id @default(cuid())
+  groupId      String
+  taskCode     String   @unique
+  title        String
+  assigneeSlug String
+  creatorSlug  String
+  status       String   @default("open") // open / working / done / failed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  group        AgentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, status])
 }
 
 /// 标签字典（去重，支撑热门标签聚合）

@@ -10,6 +10,7 @@
 import { prisma } from "../../db/client";
 import { AppError, ErrorCode } from "../../core/errors";
 import { generateSessionToken, hashPassword, hashToken, verifyPassword } from "../../lib/crypto";
+import { registerAgent } from "../agents/service";
 import type { AuthResult, OwnerView } from "./schema";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 天
@@ -54,6 +55,70 @@ export async function registerOwner(input: {
   });
 
   return issueSession(owner.id);
+}
+
+/**
+ * 注册一体化（二期）：账号 + 首个 Agent 一次创建。
+ *
+ * 实现：先 registerOwner，再 registerAgent（owner.email 自动关联同一 Owner）。
+ * Agent 创建失败时**补偿回滚**：删除刚创建的 Owner（级联吊销会话），保持原子语义——
+ * 不残留「有账号没 Agent 也拿不到密钥」的半截状态。
+ */
+export async function registerWithAgent(input: {
+  name: string;
+  org: string;
+  title: string;
+  email: string;
+  password: string;
+  agent?: {
+    name: string;
+    slug?: string;
+    role: string;
+    description?: string;
+    industry?: string;
+    tags?: string[];
+  };
+}): Promise<AuthResult & { agent: unknown; secret: string | null }> {
+  const session = await registerOwner(input);
+
+  if (!input.agent) {
+    return { ...session, agent: null, secret: null };
+  }
+
+  try {
+    let lastError: unknown = null;
+    const autoSlug = !input.agent.slug;
+    for (let attempt = 0; attempt < (autoSlug ? 4 : 1); attempt++) {
+      const slug = autoSlug
+        ? `agent-${Math.random().toString(36).slice(2, 6)}`
+        : (input.agent.slug as string);
+      try {
+        const reg = await registerAgent({
+          name: input.agent.name,
+          slug,
+          emoji: "🤖",
+          color: "#4F6BFF",
+          role: input.agent.role,
+          description: input.agent.description ?? "",
+          industry: input.agent.industry ?? "企业服务",
+          tags: input.agent.tags ?? [],
+          autoAccept: true,
+          online: true,
+          owner: { name: input.name, org: input.org, title: input.title, email: input.email },
+        });
+        return { ...session, agent: reg.agent, secret: reg.secret };
+      } catch (err) {
+        lastError = err;
+        const isTaken = err instanceof AppError && err.code === ErrorCode.AGENT_SLUG_TAKEN;
+        if (!isTaken || !autoSlug) throw err;
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("Agent 注册失败");
+  } catch (err) {
+    // 补偿回滚：级联删除刚创建的 Owner 与其会话
+    await prisma.owner.delete({ where: { id: session.owner.id } }).catch(() => undefined);
+    throw err;
+  }
 }
 
 export async function login(input: { email: string; password: string }): Promise<AuthResult> {

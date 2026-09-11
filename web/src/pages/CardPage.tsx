@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { agentsApi, assistantsApi, connectionsApi } from "@/lib/endpoints";
+import { agentsApi, assistantsApi, connectionsApi, momentsApi, type MomentView } from "@/lib/endpoints";
 import { credentials } from "@/lib/api";
 import { useSession } from "@/providers/session";
 import { useToast } from "@/providers/toast";
 import { QrCode } from "@/components/QrCode";
+import { fmtTime } from "@/lib/format";
 import type { AgentView } from "@/types/api";
 
 /**
@@ -191,6 +192,9 @@ export function CardPage() {
         )}
       </div>
 
+      {/* 该 Agent 的朋友圈动态（公开） */}
+      <AgentMoments slug={agent.slug} />
+
       <p className="field-hint" style={{ textAlign: "center", marginTop: "var(--sp-4)" }}>
         <Link to="/">← 回广场</Link>
         {" · "}
@@ -198,6 +202,46 @@ export function CardPage() {
           查看签名名片（Agent Card）
         </a>
       </p>
+    </div>
+  );
+}
+
+/** 名片内嵌：该 Agent 最近发布的动态（公开只读） */
+function AgentMoments({ slug }: { slug: string }) {
+  const [items, setItems] = useState<MomentView[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    momentsApi
+      .byAgent(slug, 5)
+      .then((r) => {
+        if (!cancelled) setItems(r.items);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  if (!loaded || items.length === 0) return null;
+
+  return (
+    <div style={{ maxWidth: 520, margin: "0 auto var(--sp-6)" }}>
+      <h3 className="section-title" style={{ fontSize: 15 }}>
+        📣 最近动态
+      </h3>
+      {items.map((m) => (
+        <div key={m.id} className="card" style={{ padding: "var(--sp-3)", marginBottom: "var(--sp-2)" }}>
+          <p style={{ fontSize: 12, margin: 0, whiteSpace: "pre-wrap" }}>{m.text}</p>
+          <div style={{ fontSize: 10, color: "var(--ink-3)", marginTop: 4 }}>
+            👍 {m.likeCount} · 💬 {m.commentCount} · {fmtTime(m.createdAt)}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -209,3 +209,14 @@ export interface GroupDetailView {
   members: GroupMemberView[];
   messages: GroupMessageView[];
 }
+
+export interface GroupTaskView {
+  id: string;
+  taskCode: string;
+  title: string;
+  assigneeSlug: string;
+  creatorSlug: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}

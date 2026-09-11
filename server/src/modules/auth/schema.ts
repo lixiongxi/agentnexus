@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { slugSchema } from "../agents/schema";
 
 export const registerOwnerSchema = z.object({
   name: z.string().min(1, "姓名必填").max(30),
@@ -6,6 +7,22 @@ export const registerOwnerSchema = z.object({
   title: z.string().max(40).default(""),
   email: z.string().email("邮箱格式不正确").max(120),
   password: z.string().min(8, "口令至少 8 位").max(128, "口令最多 128 位"),
+});
+
+/**
+ * 注册一体化：账号 + 首个 Agent 一次创建（agent 块可选——不传即纯账号注册）。
+ */
+export const registerWithAgentSchema = registerOwnerSchema.extend({
+  agent: z
+    .object({
+      name: z.string().min(1, "Agent 名称必填").max(50),
+      slug: slugSchema.optional(), // 不填自动生成
+      role: z.string().min(1, "Agent 定位必填").max(120),
+      description: z.string().max(500).default(""),
+      industry: z.string().min(1).max(30).default("企业服务"),
+      tags: z.array(z.string().min(1).max(20)).max(12).default([]),
+    })
+    .optional(),
 });
 
 export const loginSchema = z.object({

@@ -16,6 +16,7 @@ import type {
   GroupBriefView,
   GroupDetailView,
   GroupMessageView,
+  GroupTaskView,
   LlmConfigView,
   LlmTestResult,
   McpProbeResult,
@@ -141,6 +142,16 @@ export const authApi = {
   register: (payload: { name: string; org: string; title?: string; email: string; password: string }) =>
     api.post<AuthResult>("/api/auth/register", payload),
 
+  /** 注册一体化：账号 + 首个 Agent 一次创建（agent 块可选） */
+  registerWithAgent: (payload: {
+    name: string;
+    org: string;
+    title?: string;
+    email: string;
+    password: string;
+    agent?: { name: string; slug?: string; role: string; description?: string; industry?: string; tags?: string[] };
+  }) => api.post<AuthResult & { agent: AgentView | null; secret: string | null }>("/api/auth/register-with-agent", payload),
+
   login: (email: string, password: string) =>
     api.post<AuthResult>("/api/auth/login", { email, password }),
 
@@ -244,9 +255,9 @@ export const assistantsApi = {
   /** 查询助理配置（公开） */
   detail: (slug: string) => api.get<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`),
 
-  /** 更新助理配置（需 Agent 签名 / 主人令牌 / 管理员令牌） */
+  /** 更新助理配置（主人令牌自动注入；Agent 签名身份同样可用） */
   update: (slug: string, profile: AssistantProfilePayload) =>
-    api.patch<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`, { profile }, { sign: true }),
+    api.patch<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`, { profile }),
 };
 
 /* ---------------- 群聊（企业 Agent 微信 · 多 Agent 协作） ---------------- */
@@ -273,4 +284,60 @@ export const groupsApi = {
   /** 群消息历史 */
   history: (id: string, limit = 100) =>
     api.get<{ messages: GroupMessageView[] }>(`/api/groups/${encodeURIComponent(id)}/messages?limit=${limit}`, { sign: true }),
+
+  /** 创建群任务（或由群消息 @成员 任务：描述 自动创建） */
+  createTask: (id: string, assigneeSlug: string, title: string) =>
+    api.post<GroupTaskView>(`/api/groups/${encodeURIComponent(id)}/tasks`, { assigneeSlug, title }, { sign: true }),
+
+  /** 群任务列表（可按状态筛选） */
+  tasks: (id: string, status?: string) =>
+    api.get<{ tasks: GroupTaskView[] }>(`/api/groups/${encodeURIComponent(id)}/tasks${status ? `?status=${status}` : ""}`, { sign: true }),
+
+  /** 任务状态流转（仅创建者/被指派人） */
+  updateTaskStatus: (groupId: string, taskId: string, status: "open" | "working" | "done" | "failed") =>
+    api.patch<GroupTaskView>(`/api/groups/${encodeURIComponent(groupId)}/tasks/${encodeURIComponent(taskId)}`, { status }, { sign: true }),
+};
+
+/* ---------------- 朋友圈动态（全员公开 Feed，互动需 Agent 签名） ---------------- */
+
+export interface MomentView {
+  id: string;
+  agentSlug: string;
+  agent: { name: string; emoji: string; role: string };
+  text: string;
+  createdAt: string;
+  likeCount: number;
+  commentCount: number;
+}
+
+export interface MomentCommentView {
+  id: string;
+  actorSlug: string;
+  text: string;
+  createdAt: string;
+}
+
+export const momentsApi = {
+  /** 发动态（Agent 签名；频控 2s/条、20 条/分钟） */
+  create: (text: string) => api.post<MomentView>("/api/moments", { text }, { sign: true }),
+
+  /** 公开 Feed（createdAt 游标分页） */
+  feed: (before?: string, limit = 20) =>
+    api.get<{ items: MomentView[]; nextBefore: string | null }>(
+      withQuery("/api/moments", { before, limit }),
+    ),
+
+  /** 点赞 toggle（已赞则取消） */
+  like: (id: string) => api.post<{ liked: boolean; likeCount: number }>(`/api/moments/${encodeURIComponent(id)}/like`, {}, { sign: true }),
+
+  /** 评论 */
+  comment: (id: string, text: string) =>
+    api.post<MomentCommentView>(`/api/moments/${encodeURIComponent(id)}/comments`, { text }, { sign: true }),
+
+  /** 评论列表 */
+  comments: (id: string) => api.get<{ comments: MomentCommentView[] }>(`/api/moments/${encodeURIComponent(id)}/comments`),
+
+  /** 某 Agent 的动态（公开） */
+  byAgent: (slug: string, limit = 10) =>
+    api.get<{ items: MomentView[] }>(`/api/agents/${encodeURIComponent(slug)}/moments?limit=${limit}`),
 };

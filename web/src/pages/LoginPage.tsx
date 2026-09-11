@@ -26,35 +26,64 @@ export function LoginPage() {
     org: "",
     title: "",
   });
+  // 注册一体化：注册账号的同时创建首个 Agent（二期）
+  const [agentForm, setAgentForm] = useState({ name: "", role: "", industry: "企业服务" });
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  const setAgent = (key: keyof typeof agentForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setAgentForm((f) => ({ ...f, [key]: e.target.value }));
+
   const valid =
     /.+@.+\..+/.test(form.email) &&
     form.password.length >= 8 &&
-    (mode === "login" || (form.name.trim().length > 0 && form.org.trim().length > 0));
+    (mode === "login" ||
+      (form.name.trim().length > 0 &&
+        form.org.trim().length > 0 &&
+        agentForm.name.trim().length > 0 &&
+        agentForm.role.trim().length > 0));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!valid || submitting) return;
     setSubmitting(true);
     try {
-      const result =
-        mode === "login"
-          ? await authApi.login(form.email, form.password)
-          : await authApi.register({
-              name: form.name.trim(),
-              org: form.org.trim(),
-              title: form.title.trim() || undefined,
-              email: form.email.trim(),
-              password: form.password,
-            });
+      let result: Awaited<ReturnType<typeof authApi.login>>;
+      let newAgentSlug: string | null = null;
+
+      if (mode === "login") {
+        result = await authApi.login(form.email, form.password);
+      } else {
+        const reg = await authApi.registerWithAgent({
+          name: form.name.trim(),
+          org: form.org.trim(),
+          title: form.title.trim() || undefined,
+          email: form.email.trim(),
+          password: form.password,
+          agent: {
+            name: agentForm.name.trim(),
+            role: agentForm.role.trim(),
+            industry: agentForm.industry.trim() || "企业服务",
+          },
+        });
+        result = reg;
+        newAgentSlug = reg.agent?.slug ?? null;
+        // 注册即持有 Agent 凭据：自动绑定
+        if (reg.agent && reg.secret) {
+          credentials.agent.set({ slug: reg.agent.slug, secret: reg.secret });
+        }
+      }
 
       credentials.ownerToken.set(result.token);
       setOwner(result.owner);
       toast(mode === "login" ? `欢迎回来，${result.owner.name}` : `注册成功，欢迎 ${result.owner.name}`, "success");
 
+      // 新注册：直接去配置助理能力（Agent 已就位）
+      if (newAgentSlug) {
+        navigate(`/factory?agent=${encodeURIComponent(newAgentSlug)}`, { replace: true });
+        return;
+      }
       const from = (location.state as LocationState | null)?.from?.pathname ?? "/buddy";
       navigate(from, { replace: true });
     } catch (err: unknown) {
@@ -120,6 +149,45 @@ export function LoginPage() {
                   职位
                 </label>
                 <input id="login-title" className="input" value={form.title} onChange={set("title")} maxLength={40} />
+              </div>
+
+              {/* 注册一体化：同步创建首个 Agent */}
+              <div style={{ borderTop: "1px solid var(--line, #e6eaf2)", margin: "var(--sp-2) 0 var(--sp-4)", paddingTop: "var(--sp-3)" }}>
+                <p className="field-hint" style={{ marginTop: 0 }}>
+                  🤖 同时创建你的第一个 Agent（注册后可继续在「创建助理」配置它的客服/销售能力）
+                </p>
+                <div className="field">
+                  <label className="field-label" htmlFor="login-agent-name">Agent 名称 *</label>
+                  <input
+                    id="login-agent-name"
+                    className="input"
+                    value={agentForm.name}
+                    onChange={setAgent("name")}
+                    placeholder="例：小帆智能助理"
+                    maxLength={50}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="login-agent-role">一句话定位 *</label>
+                  <input
+                    id="login-agent-role"
+                    className="input"
+                    value={agentForm.role}
+                    onChange={setAgent("role")}
+                    placeholder="例：云帆制造的全能助理"
+                    maxLength={120}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="login-agent-industry">行业</label>
+                  <input
+                    id="login-agent-industry"
+                    className="input"
+                    value={agentForm.industry}
+                    onChange={setAgent("industry")}
+                    maxLength={30}
+                  />
+                </div>
               </div>
             </>
           )}

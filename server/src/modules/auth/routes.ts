@@ -2,8 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { parse } from "../../http/validate";
 import { ownerOf, requireOwnerAuth } from "../../http/auth";
 import { audit, clientIp } from "../../core/audit";
-import { getOwnerById, login, logout, registerOwner } from "./service";
-import { loginSchema, registerOwnerSchema } from "./schema";
+import { getOwnerById, login, logout, registerOwner, registerWithAgent } from "./service";
+import { loginSchema, registerOwnerSchema, registerWithAgentSchema } from "./schema";
 
 function extractToken(req: { headers: Record<string, unknown> }): string {
   const authz = req.headers.authorization;
@@ -23,6 +23,23 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       actorId: result.owner.id,
       action: "auth.register",
       target: result.owner.email ?? "",
+      ip: clientIp(req.headers),
+    });
+
+    return result;
+  });
+
+  /* ---------- 注册一体化：账号 + 首个 Agent（二期） ---------- */
+  app.post("/api/auth/register-with-agent", async (req) => {
+    const input = parse(registerWithAgentSchema, req.body);
+    const result = await registerWithAgent(input);
+
+    await audit({
+      actorType: "owner",
+      actorId: result.owner.id,
+      action: "auth.registerWithAgent",
+      target: result.owner.email ?? "",
+      detail: result.agent ? `含首个 Agent（密钥一次性下发）` : "纯账号注册",
       ip: clientIp(req.headers),
     });
 

@@ -11,8 +11,8 @@ import type { FastifyInstance } from "fastify";
 import { parse } from "../../http/validate";
 import { requireAgentAuth, agentOf } from "../../http/auth";
 import { audit, clientIp } from "../../core/audit";
-import { createGroup, addMembers, getGroupDetail, listGroups, listGroupMessages, sendGroupMessage } from "./service";
-import { addGroupMembersSchema, createGroupSchema, groupMessageSchema } from "./schema";
+import { createGroup, addMembers, getGroupDetail, listGroups, listGroupMessages, sendGroupMessage, createTask, listTasks, updateTaskStatus } from "./service";
+import { addGroupMembersSchema, createGroupSchema, groupMessageSchema, createTaskSchema, updateTaskStatusSchema } from "./schema";
 
 export async function registerGroupRoutes(app: FastifyInstance): Promise<void> {
   app.post("/api/groups", { preHandler: [requireAgentAuth] }, async (req) => {
@@ -64,6 +64,48 @@ export async function registerGroupRoutes(app: FastifyInstance): Promise<void> {
     const { id } = req.params as { id: string };
     const input = parse(groupMessageSchema, req.body);
     return sendGroupMessage(me, id, input.text);
+  });
+
+  /* ---------- 群任务分派（二期） ---------- */
+  app.post("/api/groups/:id/tasks", { preHandler: [requireAgentAuth] }, async (req) => {
+    const me = agentOf(req).slug;
+    const { id } = req.params as { id: string };
+    const input = parse(createTaskSchema, req.body);
+    const result = await createTask(me, id, input.assigneeSlug, input.title);
+
+    await audit({
+      actorType: "agent",
+      actorId: me,
+      action: "group.task.create",
+      target: result.taskCode,
+      detail: `任务「${result.title}」指派给 ${result.assigneeSlug}`,
+      ip: clientIp(req.headers),
+    });
+    return result;
+  });
+
+  app.get("/api/groups/:id/tasks", { preHandler: [requireAgentAuth] }, async (req) => {
+    const me = agentOf(req).slug;
+    const { id } = req.params as { id: string };
+    const query = (req.query ?? {}) as { status?: string };
+    return { tasks: await listTasks(me, id, query.status || undefined) };
+  });
+
+  app.patch("/api/groups/:gid/tasks/:taskId", { preHandler: [requireAgentAuth] }, async (req) => {
+    const me = agentOf(req).slug;
+    const { gid, taskId } = req.params as { gid: string; taskId: string };
+    const input = parse(updateTaskStatusSchema, req.body);
+
+    const result = await updateTaskStatus(me, gid, taskId, input.status);
+    await audit({
+      actorType: "agent",
+      actorId: me,
+      action: "group.task.status",
+      target: result.taskCode,
+      detail: `状态 → ${result.status}`,
+      ip: clientIp(req.headers),
+    });
+    return result;
   });
 
   app.get("/api/groups/:id/messages", { preHandler: [requireAgentAuth] }, async (req) => {
