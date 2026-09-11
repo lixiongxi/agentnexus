@@ -9,7 +9,8 @@
  */
 import { prisma } from "../../db/client";
 import { AppError, ErrorCode } from "../../core/errors";
-import { generateSessionToken, hashPassword, hashToken, verifyPassword } from "../../lib/crypto";
+import { config } from "../../core/config";
+import { hashPassword, signSessionToken, verifyPassword } from "../../lib/crypto";
 import { registerAgent } from "../agents/service";
 import type { AuthResult, OwnerView } from "./schema";
 
@@ -55,6 +56,22 @@ export async function registerOwner(input: {
   });
 
   return issueSession(owner.id);
+}
+
+/**
+ * 会话签发（二期改造）：**无状态 HMAC 令牌**。
+ * 部署环境可能多 upstream 并存，本地 SQLite 跨请求一致性无法保证 ——
+ * 令牌自校验（验签 + 过期），不查库；owner 身份编码进 payload。
+ * 代价：logout 失去服务端吊销语义（客户端删令牌即可）。
+ */
+async function issueSession(ownerId: string): Promise<AuthResult> {
+  const owner = await prisma.owner.findUniqueOrThrow({ where: { id: ownerId } });
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+  const token = signSessionToken(
+    { ownerId: owner.id, name: owner.name, org: owner.org, role: owner.role, exp: expiresAt.getTime() },
+    config.security.sessionSecret ?? "",
+  );
+  return { token, expiresAt: expiresAt.toISOString(), owner: toView(owner) };
 }
 
 /**
@@ -137,24 +154,9 @@ export async function login(input: { email: string; password: string }): Promise
   return issueSession(owner.id);
 }
 
-async function issueSession(ownerId: string): Promise<AuthResult> {
-  const token = generateSessionToken();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-
-  await prisma.ownerSession.create({
-    data: { ownerId, tokenHash: hashToken(token), expiresAt },
-  });
-
-  const owner = await prisma.owner.findUniqueOrThrow({ where: { id: ownerId } });
-  return { token, expiresAt: expiresAt.toISOString(), owner: toView(owner) };
-}
-
-/** 登出：吊销当前会话 */
-export async function logout(token: string): Promise<void> {
-  await prisma.ownerSession.updateMany({
-    where: { tokenHash: hashToken(token) },
-    data: { revokedAt: new Date() },
-  });
+/** 登出：无状态令牌无服务端吊销语义，客户端删令牌即可（保留接口兼容） */
+export async function logout(_token: string): Promise<void> {
+  return;
 }
 
 /** 清理过期会话（启动时与定期任务调用） */

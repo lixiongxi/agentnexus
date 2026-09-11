@@ -136,3 +136,46 @@ export function generateSessionToken(): string {
 export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token, "utf8").digest("hex");
 }
+
+/* ---------------- 无状态会话令牌（HMAC 自校验，不依赖库） ----------------
+ * 部署环境可能存在多 upstream 并存（旧版本实例残留），本地 SQLite 跨请求一致性
+ * 无法保证 —— 会话改为 HMAC 签名令牌：payload 携带主人身份，验签即信，不查库。
+ * 代价：失去服务端吊销（logout 退化为客户端删令牌），演示/公开部署可接受。
+ */
+
+export interface SessionPayload {
+  ownerId: string;
+  name: string;
+  org: string;
+  role: string;
+  exp: number; // 毫秒时间戳
+}
+
+function sessionKey(secret: string): Buffer {
+  return crypto.createHash("sha256").update(`session:${secret}`, "utf8").digest();
+}
+
+export function signSessionToken(payload: SessionPayload, secret: string): string {
+  const body = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  const sig = crypto.createHmac("sha256", sessionKey(secret)).update(body, "utf8").digest("base64url");
+  return `${body}.${sig}`;
+}
+
+export function verifySessionToken(token: string, secret: string): SessionPayload | null {
+  const dot = token.indexOf(".");
+  if (dot <= 0) return null;
+  const body = token.slice(0, dot);
+  const sig = token.slice(dot + 1);
+  const expect = crypto.createHmac("sha256", sessionKey(secret)).update(body, "utf8").digest("base64url");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expect);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SessionPayload;
+    if (!payload.ownerId || typeof payload.exp !== "number") return null;
+    if (payload.exp <= Date.now()) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}

@@ -13,7 +13,7 @@ import crypto from "node:crypto";
 import { config } from "../core/config";
 import { AppError, ErrorCode } from "../core/errors";
 import { prisma } from "../db/client";
-import { decryptSecret, hashToken, verifyRequestSignature } from "../lib/crypto";
+import { decryptSecret, verifyRequestSignature, verifySessionToken } from "../lib/crypto";
 import type { AgentContext, OwnerContext } from "../core/context";
 
 /** 从请求体安全读取字符串字段（body 形状未知，避免直接下标断言） */
@@ -117,32 +117,37 @@ export async function optionalAgentAuth(req: FastifyRequest): Promise<void> {
   }
 }
 
-/** 主人身份鉴权（会话令牌：Authorization: Bearer <token> 或 X-Owner-Token） */
-export async function requireOwnerAuth(req: FastifyRequest): Promise<void> {
+/** 提取主人令牌（Authorization: Bearer 或 X-Owner-Token，二选一） */
+function extractOwnerToken(req: FastifyRequest): string {
   const authz = req.headers.authorization;
   const bearer = authz?.startsWith("Bearer ") ? authz.slice(7).trim() : undefined;
-  const token = bearer || (req.headers["x-owner-token"] as string | undefined)?.trim();
+  return bearer || (req.headers["x-owner-token"] as string | undefined)?.trim() || "";
+}
 
+/** 解析无状态会话令牌（HMAC 验签 + 过期校验），失败返回 null */
+function parseOwnerToken(token: string) {
+  if (!token || !config.security.sessionSecret) return null;
+  return verifySessionToken(token, config.security.sessionSecret);
+}
+
+/** 主人身份鉴权（无状态会话令牌：Authorization: Bearer <token> 或 X-Owner-Token） */
+export async function requireOwnerAuth(req: FastifyRequest): Promise<void> {
+  const token = extractOwnerToken(req);
   if (!token) throw new AppError(ErrorCode.OWNER_TOKEN_MISSING, "缺少主人身份令牌");
   if (!config.security.sessionSecret) {
     throw new AppError(ErrorCode.INTERNAL, "服务端未配置 SESSION_SECRET，无法校验会话");
   }
 
-  const tokenHash = hashToken(token);
-  const session = await prisma.ownerSession.findUnique({
-    where: { tokenHash },
-    include: { owner: true },
-  });
-
-  if (!session || session.revokedAt || session.expiresAt.getTime() <= Date.now()) {
+  const payload = parseOwnerToken(token);
+  if (!payload) {
     throw new AppError(ErrorCode.OWNER_TOKEN_INVALID, "会话无效或已过期，请重新登录");
   }
 
   req.ownerContext = {
     kind: "owner",
-    ownerId: session.ownerId,
-    name: session.owner.name,
-    role: session.owner.role,
+    ownerId: payload.ownerId,
+    name: payload.name,
+    role: payload.role,
   };
 }
 
@@ -151,22 +156,15 @@ export async function requireOwnerAuth(req: FastifyRequest): Promise<void> {
  * 用于「同一接口对匿名与已登录用户表现不同」的场景。
  */
 export async function optionalOwnerAuth(req: FastifyRequest): Promise<void> {
-  const authz = req.headers.authorization;
-  const bearer = authz?.startsWith("Bearer ") ? authz.slice(7).trim() : undefined;
-  const token = bearer || (req.headers["x-owner-token"] as string | undefined)?.trim();
-  if (!token || !config.security.sessionSecret) return;
-
-  const session = await prisma.ownerSession.findUnique({
-    where: { tokenHash: hashToken(token) },
-    include: { owner: true },
-  });
-  if (!session || session.revokedAt || session.expiresAt.getTime() <= Date.now()) return;
+  const token = extractOwnerToken(req);
+  const payload = parseOwnerToken(token);
+  if (!payload) return;
 
   req.ownerContext = {
     kind: "owner",
-    ownerId: session.ownerId,
-    name: session.owner.name,
-    role: session.owner.role,
+    ownerId: payload.ownerId,
+    name: payload.name,
+    role: payload.role,
   };
 }
 
