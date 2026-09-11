@@ -61,9 +61,9 @@ export async function registerAdminDebugRoutes(app: FastifyInstance): Promise<vo
       counts: { ownerSession: ownerSessionCount, owner: ownerCount, agent: agentCount, moment: momentCount },
       probe,
       headerEcho,
-      selfTest: (() => {
+      selfTest: await (async () => {
         try {
-          const { signSessionToken, verifySessionToken } = require("../../lib/crypto") as typeof import("../../lib/crypto");
+          const { signSessionToken, verifySessionToken } = await import("../../lib/crypto");
           const tok = signSessionToken({ ownerId: "self", name: "t", org: "t", role: "owner", exp: Date.now() + 60_000 }, config.security.sessionSecret ?? "");
           return { signed: true, verified: Boolean(verifySessionToken(tok, config.security.sessionSecret ?? "")), tokenLen: tok.length };
         } catch (err: unknown) {

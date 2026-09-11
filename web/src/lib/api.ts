@@ -111,8 +111,10 @@ async function request<T>(
   };
 
   // 主人令牌（读接口用于身份识别）
+  // 注意：走 X-Owner-Token 而非 Authorization —— 反代网关会注入自己的 Authorization（JWT），
+  // 覆盖应用令牌；X-Owner-Token 是干净通道（服务端双头兼容）。
   const ownerToken = credentials.ownerToken.get();
-  if (ownerToken) headers["Authorization"] = `Bearer ${ownerToken}`;
+  if (ownerToken) headers["X-Owner-Token"] = ownerToken;
 
   // 管理员令牌
   const adminToken = credentials.adminToken.get();
