@@ -13,11 +13,14 @@ export interface AgentContext {
   verified: boolean;
 }
 
-/** 主人身份（会话令牌校验通过） */
+/** 主人身份（无状态会话令牌校验通过，身份来自令牌 payload） */
 export interface OwnerContext {
   kind: "owner";
   ownerId: string;
   name: string;
+  org: string;
+  email: string | null;
+  title: string | null;
   role: string;
 }
 

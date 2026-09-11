@@ -78,9 +78,9 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     return { ok: true };
   });
 
-  /* ---------- 当前登录主人信息 ---------- */
+  /* ---------- 当前登录主人信息（无状态：直接回显令牌 payload，不查库） ---------- */
   app.get("/api/auth/me", { preHandler: [requireOwnerAuth] }, async (req) => {
-    const owner = ownerOf(req);
-    return getOwnerById(owner.ownerId);
+    const o = ownerOf(req);
+    return { id: o.ownerId, name: o.name, org: o.org, title: o.title, email: o.email, role: o.role };
   });
 }

@@ -68,7 +68,15 @@ async function issueSession(ownerId: string): Promise<AuthResult> {
   const owner = await prisma.owner.findUniqueOrThrow({ where: { id: ownerId } });
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
   const token = signSessionToken(
-    { ownerId: owner.id, name: owner.name, org: owner.org, role: owner.role, exp: expiresAt.getTime() },
+    {
+      ownerId: owner.id,
+      name: owner.name,
+      org: owner.org,
+      email: owner.email ?? undefined,
+      title: owner.title,
+      role: owner.role,
+      exp: expiresAt.getTime(),
+    },
     config.security.sessionSecret ?? "",
   );
   return { token, expiresAt: expiresAt.toISOString(), owner: toView(owner) };

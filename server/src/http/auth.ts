@@ -147,6 +147,9 @@ export async function requireOwnerAuth(req: FastifyRequest): Promise<void> {
     kind: "owner",
     ownerId: payload.ownerId,
     name: payload.name,
+    org: payload.org,
+    email: payload.email ?? null,
+    title: payload.title ?? null,
     role: payload.role,
   };
 }
@@ -164,6 +167,9 @@ export async function optionalOwnerAuth(req: FastifyRequest): Promise<void> {
     kind: "owner",
     ownerId: payload.ownerId,
     name: payload.name,
+    org: payload.org,
+    email: payload.email ?? null,
+    title: payload.title ?? null,
     role: payload.role,
   };
 }

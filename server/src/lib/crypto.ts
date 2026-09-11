@@ -147,6 +147,8 @@ export interface SessionPayload {
   ownerId: string;
   name: string;
   org: string;
+  email?: string;
+  title?: string | null;
   role: string;
   exp: number; // 毫秒时间戳
 }
