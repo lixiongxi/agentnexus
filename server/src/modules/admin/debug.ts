@@ -61,6 +61,18 @@ export async function registerAdminDebugRoutes(app: FastifyInstance): Promise<vo
       counts: { ownerSession: ownerSessionCount, owner: ownerCount, agent: agentCount, moment: momentCount },
       probe,
       headerEcho,
+      selfTest: (() => {
+        try {
+          const { signSessionToken, verifySessionToken } = require("../../lib/crypto") as typeof import("../../lib/crypto");
+          const tok = signSessionToken({ ownerId: "self", name: "t", org: "t", role: "owner", exp: Date.now() + 60_000 }, config.security.sessionSecret ?? "");
+          return { signed: true, verified: Boolean(verifySessionToken(tok, config.security.sessionSecret ?? "")), tokenLen: tok.length };
+        } catch (err: unknown) {
+          return { signed: false, verified: false, error: err instanceof Error ? err.message : String(err) };
+        }
+      })(),
+      nodeVersion: process.version,
+      startedAtIso: new Date(process.uptime() ? Date.now() - process.uptime() * 1000 : Date.now()).toISOString(),
+      uptimeSec: Math.round(process.uptime()),
       recentSessions: recent.map((s) => ({
         tokenHashPrefix: s.tokenHash.slice(0, 12),
         createdAt: s.createdAt.toISOString(),
