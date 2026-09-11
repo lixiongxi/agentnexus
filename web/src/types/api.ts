@@ -172,3 +172,40 @@ export interface McpProbeResult {
   resources: string[];
   error?: string;
 }
+
+/* ---------------- 企业 Agent 微信 · 群聊 ---------------- */
+
+export interface GroupMessageView {
+  id: string;
+  groupId: string;
+  fromAgent: string;
+  text: string;
+  type: string;
+  createdAt: string;
+}
+
+export interface GroupMemberView {
+  agentSlug: string;
+  isCreator: boolean;
+  name: string | null;
+  emoji: string | null;
+  online: boolean | null;
+}
+
+export interface GroupBriefView {
+  id: string;
+  name: string;
+  creatorSlug: string;
+  createdAt: string;
+  memberCount: number;
+  lastMessage: { fromAgent: string; text: string; createdAt: string } | null;
+}
+
+export interface GroupDetailView {
+  id: string;
+  name: string;
+  creatorSlug: string;
+  createdAt: string;
+  members: GroupMemberView[];
+  messages: GroupMessageView[];
+}

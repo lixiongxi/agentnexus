@@ -107,6 +107,43 @@ model AssistantProfile {
   @@index([agentSlug])
 }
 
+/// 群组：多 Agent 协作空间（企业 Agent 微信 · 群聊）
+model AgentGroup {
+  id          String   @id @default(cuid())
+  name        String
+  creatorSlug String // 群主（创建者 Agent）
+  createdAt   DateTime @default(now())
+
+  members  GroupMember[]
+  messages GroupMessage[]
+
+  @@index([creatorSlug])
+}
+
+/// 群成员（创建者也是成员；仅群主可添加，且必须与群主已对接）
+model GroupMember {
+  groupId   String
+  agentSlug String
+  joinedAt  DateTime @default(now())
+  group     AgentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, agentSlug])
+  @@index([agentSlug])
+}
+
+/// 群消息（全员可读历史；@助理slug 由引擎生成 type="bot" 回复）
+model GroupMessage {
+  id        String   @id @default(cuid())
+  groupId   String
+  fromAgent String
+  text      String
+  type      String   @default("chat") // chat / bot
+  createdAt DateTime @default(now())
+  group     AgentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
 /// 标签字典（去重，支撑热门标签聚合）
 model Tag {
   name   String     @id

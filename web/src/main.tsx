@@ -4,12 +4,16 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { App } from "@/App";
 import { AboutPage } from "@/pages/AboutPage";
 import { BuddyPage } from "@/pages/BuddyPage";
+import { CardPage } from "@/pages/CardPage";
 import { ChatsPage } from "@/pages/ChatsPage";
+import { ContactsPage } from "@/pages/ContactsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MyAgentPage } from "@/pages/MyAgentPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ProtocolsPage } from "@/pages/ProtocolsPage";
 import { FactoryPage } from "@/pages/FactoryPage";
+import { GroupChatPage } from "@/pages/GroupChatPage";
+import { GroupsPage } from "@/pages/GroupsPage";
 import { SquarePage } from "@/pages/SquarePage";
 import { SessionProvider } from "@/providers/session";
 import { ToastProvider } from "@/providers/toast";
@@ -24,6 +28,10 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <SquarePage /> },
       { path: "chats", element: <ChatsPage /> },
+      { path: "contacts", element: <ContactsPage /> },
+      { path: "groups", element: <GroupsPage /> },
+      { path: "groups/:id", element: <GroupChatPage /> },
+      { path: "card/:slug", element: <CardPage /> },
       { path: "mine", element: <MyAgentPage /> },
       { path: "factory", element: <FactoryPage /> },
       { path: "about", element: <AboutPage /> },

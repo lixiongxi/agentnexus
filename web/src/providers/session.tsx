@@ -10,7 +10,7 @@ import {
 } from "react";
 import { credentials } from "@/lib/api";
 import { authApi, realtimeApi } from "@/lib/endpoints";
-import type { MessageView, OwnerProfile } from "@/types/api";
+import type { GroupMessageView, MessageView, OwnerProfile } from "@/types/api";
 
 /**
  * 会话上下文：聚合「主人登录态」与「当前绑定的 Agent 凭据」。
@@ -36,6 +36,8 @@ interface SessionContextValue extends SessionState {
   setOwner: (owner: OwnerProfile | null) => void;
   /** 实时消息订阅（基于一次性票据的 WS 连接） */
   subscribeMessages: (onMessage: (msg: MessageView) => void) => () => void;
+  /** 群消息实时订阅（同一条 WS 连接，按 group-message 事件分发） */
+  subscribeGroupMessages: (onMessage: (msg: GroupMessageView) => void) => () => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -93,9 +95,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       ws.onopen = () => setWsStatus("online");
       ws.onmessage = (ev) => {
         try {
-          const data = JSON.parse(ev.data as string) as { type: string; payload?: MessageView };
+          const data = JSON.parse(ev.data as string) as { type: string; payload?: unknown };
           if (data.type === "message" && data.payload) {
-            for (const listener of listenersRef.current) listener(data.payload);
+            for (const listener of listenersRef.current) listener(data.payload as MessageView);
+          }
+          if (data.type === "group-message" && data.payload) {
+            for (const listener of groupListenersRef.current) listener(data.payload as GroupMessageView);
           }
         } catch {
           /* 非 JSON 帧忽略 */
@@ -128,6 +133,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [connectWs],
   );
 
+  const groupListenersRef = useRef(new Set<(msg: GroupMessageView) => void>());
+
+  const subscribeGroupMessages = useCallback(
+    (onMessage: (msg: GroupMessageView) => void) => {
+      groupListenersRef.current.add(onMessage);
+      if (!wsRef.current && credentials.agent.get()) {
+        void connectWs();
+      }
+      return () => {
+        groupListenersRef.current.delete(onMessage);
+      };
+    },
+    [connectWs],
+  );
+
   const value = useMemo<SessionContextValue>(
     () => ({
       agentSlug,
@@ -138,8 +158,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       unbindAgent,
       setOwner,
       subscribeMessages,
+      subscribeGroupMessages,
     }),
-    [agentSlug, owner, wsStatus, bindAgent, unbindAgent, subscribeMessages],
+    [agentSlug, owner, wsStatus, bindAgent, unbindAgent, subscribeMessages, subscribeGroupMessages],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

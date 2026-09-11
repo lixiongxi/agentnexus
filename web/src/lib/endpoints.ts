@@ -13,6 +13,9 @@ import type {
   ChatMessageView,
   ChatSessionView,
   ConnectionView,
+  GroupBriefView,
+  GroupDetailView,
+  GroupMessageView,
   LlmConfigView,
   LlmTestResult,
   McpProbeResult,
@@ -244,4 +247,30 @@ export const assistantsApi = {
   /** 更新助理配置（需 Agent 签名 / 主人令牌 / 管理员令牌） */
   update: (slug: string, profile: AssistantProfilePayload) =>
     api.patch<AssistantView>(`/api/assistants/${encodeURIComponent(slug)}`, { profile }, { sign: true }),
+};
+
+/* ---------------- 群聊（企业 Agent 微信 · 多 Agent 协作） ---------------- */
+
+export const groupsApi = {
+  /** 建群（创建者=当前签名 Agent；memberSlugs 必须与创建者已对接） */
+  create: (name: string, memberSlugs: string[]) =>
+    api.post<{ id: string; name: string; memberSlugs: string[] }>("/api/groups", { name, memberSlugs }, { sign: true }),
+
+  /** 我的群列表 */
+  list: () => api.get<{ items: GroupBriefView[] }>("/api/groups", { sign: true }),
+
+  /** 群详情+成员+最近 50 条消息 */
+  detail: (id: string) => api.get<GroupDetailView>(`/api/groups/${encodeURIComponent(id)}`, { sign: true }),
+
+  /** 群主添加成员（须与群主已对接） */
+  addMembers: (id: string, agents: string[]) =>
+    api.post<{ added: string[] }>(`/api/groups/${encodeURIComponent(id)}/members`, { agents }, { sign: true }),
+
+  /** 发群消息 */
+  send: (id: string, text: string) =>
+    api.post<GroupMessageView>(`/api/groups/${encodeURIComponent(id)}/messages`, { text }, { sign: true }),
+
+  /** 群消息历史 */
+  history: (id: string, limit = 100) =>
+    api.get<{ messages: GroupMessageView[] }>(`/api/groups/${encodeURIComponent(id)}/messages?limit=${limit}`, { sign: true }),
 };

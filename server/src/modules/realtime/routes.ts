@@ -61,7 +61,7 @@ export async function registerRealtimeRoutes(app: FastifyInstance): Promise<void
   );
 
   /* ---------- WebSocket 实时通道 ---------- */
-  app.get("/ws", { websocket: true }, (socket, req) => {
+  app.get("/ws", { websocket: true }, async (socket, req) => {
     const rawTicket = (req.query as { ticket?: string } | undefined)?.ticket;
     if (!rawTicket) {
       socket.close(4001, "missing ticket");
@@ -77,12 +77,30 @@ export async function registerRealtimeRoutes(app: FastifyInstance): Promise<void
     const me = ticket.agentSlug;
     socket.send(JSON.stringify({ type: "connected", agent: me }));
 
+    // 群消息按「连接建立时的成员群集合」过滤；新加群后重连即可收到（v1 取舍）
+    const myGroups = new Set(
+      (
+        await prisma.groupMember.findMany({
+          where: { agentSlug: me },
+          select: { groupId: true },
+        })
+      ).map((m) => m.groupId),
+    );
+
     const unsubscribe = bus.subscribe((event: BusEvent) => {
-      if (event.type !== "message") return;
-      const m = event.payload;
-      if (m.fromAgent !== me && m.toAgent !== me) return;
-      if (socket.readyState === socket.OPEN) {
-        socket.send(JSON.stringify(event));
+      if (event.type === "message") {
+        const m = event.payload;
+        if (m.fromAgent !== me && m.toAgent !== me) return;
+        if (socket.readyState === socket.OPEN) {
+          socket.send(JSON.stringify(event));
+        }
+        return;
+      }
+      if (event.type === "group-message") {
+        if (!myGroups.has(event.payload.groupId)) return;
+        if (socket.readyState === socket.OPEN) {
+          socket.send(JSON.stringify(event));
+        }
       }
     });
 
@@ -91,7 +109,7 @@ export async function registerRealtimeRoutes(app: FastifyInstance): Promise<void
   });
 
   /* ---------- SSE 兼容通道（兼容 A2A 事件流规范） ---------- */
-  app.get("/api/stream", (req, reply) => {
+  app.get("/api/stream", async (req, reply) => {
     const rawTicket = (req.query as { ticket?: string } | undefined)?.ticket;
     if (!rawTicket) {
       reply.code(401).send({ ok: false, error: { code: "UNAUTHORIZED", message: "缺少订阅票据" } });
@@ -120,11 +138,26 @@ export async function registerRealtimeRoutes(app: FastifyInstance): Promise<void
 
     write({ type: "connected", agent: me });
 
+    const myGroups = new Set(
+      (
+        await prisma.groupMember.findMany({
+          where: { agentSlug: me },
+          select: { groupId: true },
+        })
+      ).map((m) => m.groupId),
+    );
+
     const unsubscribe = bus.subscribe((event: BusEvent) => {
-      if (event.type !== "message") return;
-      const m = event.payload;
-      if (m.fromAgent !== me && m.toAgent !== me) return;
-      write(event);
+      if (event.type === "message") {
+        const m = event.payload;
+        if (m.fromAgent !== me && m.toAgent !== me) return;
+        write(event);
+        return;
+      }
+      if (event.type === "group-message") {
+        if (!myGroups.has(event.payload.groupId)) return;
+        write(event);
+      }
     });
 
     // 25 秒心跳，防止中间层（nginx 等）因空闲断开连接

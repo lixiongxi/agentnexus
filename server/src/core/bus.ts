@@ -25,9 +25,19 @@ export interface PresencePayload {
   online: boolean;
 }
 
+export interface GroupMessagePayload {
+  id: string;
+  groupId: string;
+  fromAgent: string;
+  text: string;
+  type: string;
+  createdAt: string;
+}
+
 export type BusEvent =
   | { type: "message"; payload: MessagePayload }
-  | { type: "presence"; payload: PresencePayload };
+  | { type: "presence"; payload: PresencePayload }
+  | { type: "group-message"; payload: GroupMessagePayload };
 
 export type BusListener = (event: BusEvent) => void | Promise<void>;
 
