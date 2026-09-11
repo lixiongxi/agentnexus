@@ -4,6 +4,7 @@ import { requireAdminAuth } from "../../http/auth";
 import { audit, clientIp } from "../../core/audit";
 import { AppError, ErrorCode } from "../../core/errors";
 import { prisma } from "../../db/client";
+import { registerAdminDebugRoutes } from "./debug";
 import { getLlmConfig, setLlmConfig, testLlmConnection } from "../../lib/llm";
 import { toPublicView } from "../agents/service";
 import { auditQuerySchema, llmConfigSchema, verifySchema } from "./schema";
@@ -136,4 +137,6 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
     ]);
     return { agents, verified, connections, messages, owners, pendingConnections: pending };
   });
+
+  await registerAdminDebugRoutes(app);
 }
