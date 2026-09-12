@@ -14,9 +14,8 @@ jobs:
       run:
         working-directory: server
     env:
-      # CI 专用配置：单测均为纯逻辑、不依赖数据库；
-      # provider 已迁 PostgreSQL，CI 不做 db push（PG 集成测试需连接串时另行注入）
-      DATABASE_URL: "postgresql://ci-placeholder:ci-placeholder@localhost:5432/ci?sslmode=disable"
+      # CI 专用配置：单测均为纯逻辑、不依赖数据库（无 DATABASE_URL → PG 集成测试自动跳过）；
+      # provider 已迁 PostgreSQL，CI 不做 db push
       AUTH_MODE: strict
       SESSION_SECRET: ci-only-session-secret-not-for-production
       ADMIN_TOKEN: ci-only-admin-token-not-for-production
