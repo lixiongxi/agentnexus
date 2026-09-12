@@ -15,6 +15,8 @@ const d = isPg ? describe : describe.skip;
 const unique = () => Math.random().toString(36).slice(2, 8);
 
 d("PG 集成：注册唯一性与知识库结构化", () => {
+  // 云库（Neon 美东）往返延迟高，用例超时放宽到 90s
+  const T = { timeout: 90_000 };
   const email = `pgtest-${unique()}@test.com`;
 
   beforeAll(async () => {
@@ -26,7 +28,7 @@ d("PG 集成：注册唯一性与知识库结构化", () => {
     await prisma.owner.deleteMany({ where: { email } });
   });
 
-  it("同邮箱重复注册 → 409 该邮箱已注册（数据库级唯一约束兜底）", async () => {
+  it("同邮箱重复注册 → 409 该邮箱已注册（数据库级唯一约束兜底）", T, async () => {
     const base = {
       name: "唯一性验证",
       org: "AgentNexus",
@@ -49,7 +51,7 @@ d("PG 集成：注册唯一性与知识库结构化", () => {
     await prisma.owner.delete({ where: { id: first.owner.id } });
   });
 
-  it("FAQ/产品逐条结构化持久化（独立表，逐条回读核对）", async () => {
+  it("FAQ/产品逐条结构化持久化（独立表，逐条回读核对）", T, async () => {
     const slug = `pg-kb-${unique()}`;
     const registered = await registerAgent({
       name: "知识库结构化验证",
