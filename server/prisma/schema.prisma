@@ -21,7 +21,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -31,7 +31,7 @@ model Owner {
   name         String
   org          String
   title        String?
-  email        String?
+  email        String?  @unique // 注册邮箱唯一（PG 允许多个 NULL，演示账号不受影响）
   passwordHash String? // 主人登录口令（scrypt 摘要）；未设置表示仅支持演示登录
   role         String   @default("owner") // owner / admin
   createdAt    DateTime @default(now())
@@ -40,8 +40,6 @@ model Owner {
   agents   Agent[]
   sessions OwnerSession[]
   chats    ChatSession[]
-
-  @@index([email])
 }
 
 /// 主人登录会话（令牌存摘要，支持服务端主动吊销）
@@ -83,26 +81,60 @@ model Agent {
   tags    AgentTag[]
   setting AgentSetting?
   assistantProfile AssistantProfile?
+  faqEntries       FaqEntry[]
+  productEntries   ProductEntry[]
 
   @@index([industry])
   @@index([verified, status])
   @@index([ownerId])
 }
 
-/// 企业助理配置：把交付套件的知识库与能力开关入库，平台据此自动应答（替代外部模板进程）
+/// 企业助理配置：能力开关与单例规则（秘书/工单/转人工/集成）
+/// 知识库明细（FAQ/产品）已拆分至 FaqEntry / ProductEntry 独立表（结构化，可逐条管理）
 model AssistantProfile {
   id           String   @id @default(cuid())
   agentSlug    String   @unique
   agent        Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
   capabilities String   @default("{}") // JSON {secretary,sales,ticket}
-  faq          String   @default("[]") // JSON [{keywords[],answer}]
-  products     String   @default("[]") // JSON [{name,keywords[],pitch,priceRange,followup}]
+  faq          String   @default("[]") // 已弃用：知识库明细改存 FaqEntry（保留一个版本周期防回滚）
+  products     String   @default("[]") // 已弃用：产品明细改存 ProductEntry
   secretary    String   @default("{}") // JSON 工作时间/可预约事项/话术
   ticket       String   @default("{}") // JSON 工单话术
   escalate     String   @default("{}") // JSON 转人工触发词与话术
   fallback     String   @default("")   // 兜底话术
   integrations String   @default("{}") // JSON {calendarApiUrl,crmApiUrl,ticketApiUrl}
   updatedAt    DateTime @updatedAt
+
+  @@index([agentSlug])
+}
+
+/// 知识库 · FAQ 条目（触发关键词 → 标准答案；逐条独立管理）
+model FaqEntry {
+  id        String   @id @default(cuid())
+  agentSlug String
+  agent     Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
+  keywords  String[] // PG 原生字符串数组
+  answer    String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agentSlug])
+}
+
+/// 知识库 · 产品条目（名称/关键词/卖点/报价/追问话术）
+model ProductEntry {
+  id         String   @id @default(cuid())
+  agentSlug  String
+  agent      Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
+  name       String
+  keywords   String[]
+  pitch      String   @default("")
+  priceRange String   @default("")
+  followup   String   @default("")
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([agentSlug])
 }

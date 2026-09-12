@@ -10,6 +10,7 @@ class CredentialStore {
   static const _kSlug = 'agent.slug';
   static const _kSecret = 'agent.secret';
   static const _kOwnerToken = 'owner.token';
+  static const _kOwnerProfile = 'owner.profile';
   static const _kBaseUrl = 'app.baseUrl';
 
   late SharedPreferences _prefs;
@@ -50,6 +51,16 @@ class CredentialStore {
   Future<void> clearOwnerToken() async {
     await ensure();
     await _prefs.remove(_kOwnerToken);
+    await _prefs.remove(_kOwnerProfile);
+  }
+
+  // ---- 主人资料缓存（App 重启后「我的」页不丢失显示） ----
+  OwnerProfile? get cachedOwnerProfile => OwnerProfile.fromCacheJson(
+      _ready ? _prefs.getString(_kOwnerProfile) : null);
+
+  Future<void> setOwnerProfile(OwnerProfile profile) async {
+    await ensure();
+    await _prefs.setString(_kOwnerProfile, jsonEncode(profile.toJson()));
   }
 
   // ---- 服务地址 ----

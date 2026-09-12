@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../api/endpoints.dart' show MessagesApi;
+import '../api/endpoints.dart' show AuthApi, MessagesApi;
 import '../core/credentials.dart';
 import '../models/models.dart';
 
@@ -26,8 +26,17 @@ class SessionState extends ChangeNotifier {
   Future<void> _restore() async {
     await CredentialStore.instance.ensure();
     agentSlug = CredentialStore.instance.agentSlug;
+    // 恢复主人资料缓存（令牌在本地时，异步用 /api/auth/me 校验刷新）
+    owner = CredentialStore.instance.cachedOwnerProfile;
     ready = true;
     notifyListeners();
+    if (owner != null && CredentialStore.instance.ownerToken != null) {
+      try {
+        owner = await AuthApi.me();
+        await CredentialStore.instance.setOwnerProfile(owner!);
+        notifyListeners();
+      } catch (_) {/* 令牌失效保持缓存展示，下次操作时提示重新登录 */}
+    }
   }
 
   bool get hasAgentCredential => CredentialStore.instance.hasAgentCredential;
@@ -51,7 +60,11 @@ class SessionState extends ChangeNotifier {
 
   Future<void> setOwner(OwnerProfile? profile) async {
     owner = profile;
-    if (profile == null) await CredentialStore.instance.clearOwnerToken();
+    if (profile == null) {
+      await CredentialStore.instance.clearOwnerToken();
+    } else {
+      await CredentialStore.instance.setOwnerProfile(profile);
+    }
     notifyListeners();
   }
 

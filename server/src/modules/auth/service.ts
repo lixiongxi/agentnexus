@@ -45,17 +45,25 @@ export async function registerOwner(input: {
   const existing = await prisma.owner.findFirst({ where: { email } });
   if (existing) throw new AppError(ErrorCode.CONFLICT, "该邮箱已注册");
 
-  const owner = await prisma.owner.create({
-    data: {
-      name: input.name,
-      org: input.org,
-      title: input.title || null,
-      email,
-      passwordHash: hashPassword(input.password),
-    },
-  });
+  try {
+    const owner = await prisma.owner.create({
+      data: {
+        name: input.name,
+        org: input.org,
+        title: input.title || null,
+        email,
+        passwordHash: hashPassword(input.password),
+      },
+    });
 
-  return issueSession(owner.id);
+    return issueSession(owner.id);
+  } catch (err) {
+    // 数据库级唯一约束兜底（并发注册同一邮箱时 findFirst 可能都查不到）
+    if (typeof err === "object" && err !== null && (err as { code?: string }).code === "P2002") {
+      throw new AppError(ErrorCode.CONFLICT, "该邮箱已注册");
+    }
+    throw err;
+  }
 }
 
 /**
