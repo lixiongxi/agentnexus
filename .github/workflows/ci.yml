@@ -14,8 +14,9 @@ jobs:
       run:
         working-directory: server
     env:
-      # CI 专用配置：仓库不提交 .env，此处提供最小可运行环境
-      DATABASE_URL: "file:./ci.db"
+      # CI 专用配置：单测均为纯逻辑、不依赖数据库；
+      # provider 已迁 PostgreSQL，CI 不做 db push（PG 集成测试需连接串时另行注入）
+      DATABASE_URL: "postgresql://ci-placeholder:ci-placeholder@localhost:5432/ci?sslmode=disable"
       AUTH_MODE: strict
       SESSION_SECRET: ci-only-session-secret-not-for-production
       ADMIN_TOKEN: ci-only-admin-token-not-for-production
@@ -29,8 +30,8 @@ jobs:
           cache-dependency-path: server/package-lock.json
       - name: Install dependencies
         run: npm ci
-      - name: Prisma generate & database push (SQLite)
-        run: npx prisma db push --skip-generate && npx prisma generate
+      - name: Prisma generate
+        run: npx prisma generate
       - name: Typecheck
         run: npm run typecheck
       - name: Unit tests (21 cases)
