@@ -29,3 +29,9 @@ Thumbs.db
 # 编辑器
 .idea/
 .vscode/
+
+# 数据库文件与备份不入库
+server/prisma/*.db
+server/prisma/*.db-journal
+server/prisma/*.bak*
+backups/
