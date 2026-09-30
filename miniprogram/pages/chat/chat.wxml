@@ -1,0 +1,27 @@
+<view class="chat-page">
+  <scroll-view class="msg-list" scroll-y scroll-into-view="{{scrollInto}}" scroll-with-animation>
+    <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+
+    <view wx:elif="{{items.length === 0}}" class="empty">
+      <text class="empty-emoji">💬</text>说点什么吧 —— 对方的助理可能自动应答
+    </view>
+
+    <block wx:else>
+      <view wx:for="{{items}}" wx:key="id" id="{{item.anchor}}"
+            class="bubble-wrap {{item.mine ? 'mine' : ''}}">
+        <view class="bubble {{item.mine ? 'mine' : ''}} {{item.isBot ? 'bot' : ''}}">
+          <view wx:if="{{item.isBot && !item.mine}}" class="bot-label">🤖 自动应答</view>
+          <view>{{item.text}}</view>
+          <view class="bubble-meta">{{item.timeText}}</view>
+        </view>
+      </view>
+      <view style="height: 20rpx;"></view>
+    </block>
+  </scroll-view>
+
+  <view class="input-bar">
+    <input class="input" value="{{text}}" bindinput="onInput" confirm-type="send"
+           bindconfirm="send" placeholder="发消息…" />
+    <view class="send-btn" bindtap="{{sending ? '' : 'send'}}">{{sending ? '…' : '发送'}}</view>
+  </view>
+</view>

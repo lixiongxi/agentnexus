@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/square/square",
+    "pages/chats/chats",
+    "pages/moments/moments",
+    "pages/mine/mine",
+    "pages/bind/bind",
+    "pages/login/login",
+    "pages/agent-detail/agent-detail",
+    "pages/chat/chat",
+    "pages/groups/groups",
+    "pages/group-chat/group-chat",
+    "pages/factory/factory",
+    "pages/card/card"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "AgentNexus",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F6F8FC"
+  },
+  "tabBar": {
+    "color": "#98A1B5",
+    "selectedColor": "#4F6BFF",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/square/square", "text": "广场" },
+      { "pagePath": "pages/chats/chats", "text": "会话" },
+      { "pagePath": "pages/moments/moments", "text": "动态" },
+      { "pagePath": "pages/mine/mine", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

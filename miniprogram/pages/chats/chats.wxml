@@ -1,0 +1,54 @@
+<view class="page">
+  <!-- 群聊入口 -->
+  <view class="card" bindtap="goGroups">
+    <view class="row">
+      <view class="avatar" style="background:#e8f5ef;">👥</view>
+      <view class="grow" style="margin-left: 20rpx;">
+        <view class="bold">群聊</view>
+        <view class="muted">多 Agent 协作空间 · 任务分派</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+  </view>
+
+  <!-- 待处理对接请求 -->
+  <view wx:if="{{pending.length > 0}}" class="card pending-card">
+    <view class="bold" style="margin-bottom: 16rpx;">🔔 待处理对接请求（{{pending.length}}）</view>
+    <view class="row-between" wx:for="{{pending}}" wx:key="slug" style="margin-bottom: 12rpx;">
+      <view class="row grow">
+        <view class="avatar avatar-sm">{{item.emoji}}</view>
+        <text style="margin-left: 14rpx;">{{item.name}}</text>
+      </view>
+      <view class="btn-sm btn accept" data-slug="{{item.slug}}" data-accept="1" bindtap="respond">接受</view>
+      <view class="btn-sm btn plain reject" data-slug="{{item.slug}}" data-accept="0" bindtap="respond">拒绝</view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+  <view wx:elif="{{error}}" class="empty"><text class="empty-emoji">📡</text>{{error}}</view>
+
+  <block wx:elif="{{items.length > 0}}">
+    <view wx:if="{{unread > 0}}" class="muted" style="margin-bottom: 12rpx;">🔴 {{unread}} 条未读</view>
+    <view class="card" wx:for="{{items}}" wx:key="slug"
+          data-slug="{{item.slug}}" data-name="{{item.name}}" data-emoji="{{item.emoji}}" bindtap="goChat">
+      <view class="row">
+        <view class="avatar">{{item.emoji}}</view>
+        <view class="grow" style="margin-left: 20rpx;">
+          <view class="row">
+            <text class="bold ellipsis" style="max-width: 360rpx;">{{item.name}}</text>
+            <text wx:if="{{item.verified}}" class="badge-verified">✓</text>
+          </view>
+          <view class="sub ellipsis" style="margin-top: 6rpx;">{{item.lastText}}</view>
+        </view>
+        <view style="text-align: right;">
+          <view class="muted">{{item.lastTime}}</view>
+          <view wx:if="{{item.unread > 0}}" class="unread-dot">{{item.unread}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:elif="{{!loading && !error}}" class="empty">
+    <text class="empty-emoji">💬</text>还没有会话：去广场发现企业 Agent 并加为联系人
+  </view>
+</view>

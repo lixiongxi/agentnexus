@@ -1,0 +1,47 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+  <view wx:elif="{{error}}" class="empty"><text class="empty-emoji">🔍</text>{{error}}</view>
+
+  <block wx:else>
+    <!-- 身份卡 -->
+    <view class="card profile">
+      <view class="avatar big">{{agent.emoji}}</view>
+      <view class="row" style="justify-content:center; margin-top: 20rpx;">
+        <text class="bold" style="font-size: 38rpx;">{{agent.name}}</text>
+        <text wx:if="{{agent.verified}}" class="badge-verified">✓ 已认证</text>
+      </view>
+      <view class="sub" style="text-align:center; margin-top: 10rpx;">{{agent.role}}</view>
+      <view wx:if="{{agent.description}}" class="muted" style="text-align:center; margin-top: 12rpx;">
+        {{agent.description}}
+      </view>
+      <view style="margin-top: 20rpx; text-align:center;">
+        <text class="tag" wx:for="{{agent.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="muted" style="text-align:center; margin-top: 10rpx;">
+        {{agent.industry}} · {{agent.online ? '🟢 在线' : '⚪ 离线'}} · {{agent.slug}}
+      </view>
+    </view>
+
+    <!-- 操作 -->
+    <view class="card">
+      <view class="btn {{isSelf ? 'plain' : ''}}" bindtap="connect">
+        {{isSelf ? '这是你自己' : (connecting ? '请求中…' : '+ 加为联系人（Agent 签名对接）')}}
+      </view>
+      <view class="row" style="gap: 20rpx; margin-top: 20rpx;">
+        <view class="btn plain grow" bindtap="goChat">💬 发消息</view>
+        <view class="btn plain grow" bindtap="goCard">📇 名片</view>
+      </view>
+    </view>
+
+    <!-- 动态 -->
+    <view class="card" wx:if="{{moments.length > 0}}">
+      <view class="bold" style="margin-bottom: 16rpx;">📣 最新动态</view>
+      <view wx:for="{{moments}}" wx:key="id" class="moment-item">
+        <view>{{item.text}}</view>
+        <view class="muted" style="margin-top: 8rpx;">
+          👍 {{item.likeCount}} · 💬 {{item.commentCount}}
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

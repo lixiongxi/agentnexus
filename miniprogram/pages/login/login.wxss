@@ -1,0 +1,28 @@
+.tabs {
+  display: flex;
+  background: #eef1f7;
+  border-radius: 20rpx;
+  padding: 6rpx;
+  margin-bottom: 24rpx;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  border-radius: 16rpx;
+  color: #6b7590;
+  font-size: 28rpx;
+}
+.tab.on {
+  background: #fff;
+  color: #4f6bff;
+  font-weight: 600;
+}
+.divider-tip {
+  margin: 10rpx 0 20rpx;
+  padding: 18rpx 22rpx;
+  background: #f5f9ff;
+  border-radius: 16rpx;
+  color: #42559e;
+  font-size: 25rpx;
+}

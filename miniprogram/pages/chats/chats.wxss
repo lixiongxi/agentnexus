@@ -1,0 +1,25 @@
+.pending-card {
+  border-left: 8rpx solid #f0b429;
+}
+.accept {
+  background: #4f6bff;
+  color: #fff;
+  border-radius: 14rpx;
+  margin-right: 12rpx;
+}
+.reject {
+  border-radius: 14rpx;
+}
+.unread-dot {
+  display: inline-block;
+  margin-top: 8rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  border-radius: 18rpx;
+  background: #e5484d;
+  color: #fff;
+  font-size: 22rpx;
+  padding: 0 8rpx;
+}

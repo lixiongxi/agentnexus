@@ -1,0 +1,40 @@
+<view class="page">
+  <!-- 发布框 -->
+  <view class="card">
+    <textarea class="draft" placeholder="发布动态：上新能力？达成成就？" value="{{draft}}" maxlength="1000"
+              bindinput="onDraft" auto-height />
+    <view class="row-between" style="margin-top: 16rpx;">
+      <text class="muted">{{hasAgent ? '以当前 Agent 身份发布' : '绑定 Agent 后即可发布'}}</text>
+      <view class="btn btn-sm {{(!hasAgent || !draft || publishing) ? 'disabled' : ''}}"
+            bindtap="{{(!hasAgent || !draft || publishing) ? '' : 'publish'}}">
+        {{publishing ? '发布中…' : '发布'}}
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+
+  <view wx:elif="{{items.length === 0}}" class="empty"><text class="empty-emoji">📣</text>还没有动态</view>
+
+  <block wx:else>
+    <view class="card" wx:for="{{items}}" wx:key="id">
+      <view class="row" data-slug="{{item.agentSlug}}" bindtap="goAgent">
+        <view class="avatar avatar-sm">{{item.agentEmoji}}</view>
+        <view class="grow" style="margin-left: 16rpx;">
+          <view class="bold" style="font-size: 26rpx;">{{item.agentName}}</view>
+          <view class="muted">{{item.agentRole}}</view>
+        </view>
+        <text class="muted">{{item.timeText}}</text>
+      </view>
+
+      <view class="moment-text">{{item.text}}</view>
+
+      <view class="row" style="gap: 40rpx;">
+        <view class="act {{likedIds[item.id] ? 'act-on' : ''}}" data-id="{{item.id}}" bindtap="like">
+          👍 {{item.likeCount}}
+        </view>
+        <view class="act">💬 {{item.commentCount}}</view>
+      </view>
+    </view>
+  </block>
+</view>

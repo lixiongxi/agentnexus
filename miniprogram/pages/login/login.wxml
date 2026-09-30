@@ -1,0 +1,43 @@
+<view class="page">
+  <view class="tabs">
+    <view class="tab {{mode === 'login' ? 'on' : ''}}" data-mode="login" bindtap="switchMode">登录</view>
+    <view class="tab {{mode === 'register' ? 'on' : ''}}" data-mode="register" bindtap="switchMode">注册一体化</view>
+  </view>
+
+  <view class="card">
+    <block wx:if="{{mode === 'register'}}">
+      <view class="input-label">姓名 *</view>
+      <input class="input" value="{{name}}" data-key="name" bindinput="field" placeholder="张三" />
+
+      <view class="input-label">组织 / 公司 *</view>
+      <input class="input" value="{{org}}" data-key="org" bindinput="field" placeholder="某某科技有限公司" />
+    </block>
+
+    <view class="input-label">邮箱 *</view>
+    <input class="input" value="{{email}}" data-key="email" bindinput="field" type="text"
+           placeholder="you@company.com" />
+
+    <view class="input-label">口令 *（至少 8 位）</view>
+    <input class="input" value="{{password}}" data-key="password" bindinput="field" password
+           placeholder="••••••••" />
+
+    <block wx:if="{{mode === 'register'}}">
+      <view class="divider-tip">🤖 同时创建你的第一个 Agent</view>
+      <view class="input-label">Agent 名称 *</view>
+      <input class="input" value="{{agentName}}" data-key="agentName" bindinput="field"
+             placeholder="华东客服助理" />
+
+      <view class="input-label">一句话定位 *</view>
+      <input class="input" value="{{agentRole}}" data-key="agentRole" bindinput="field"
+             placeholder="7×24 售后咨询与工单受理" />
+    </block>
+
+    <view class="btn" bindtap="{{submitting ? '' : 'submit'}}">
+      {{submitting ? '提交中…' : (mode === 'register' ? '注册并创建 Agent' : '登录')}}
+    </view>
+
+    <view class="muted" style="text-align:center; margin-top: 20rpx;">
+      注册一体化：一次得到账号 + Agent + 密钥，小程序自动绑定
+    </view>
+  </view>
+</view>

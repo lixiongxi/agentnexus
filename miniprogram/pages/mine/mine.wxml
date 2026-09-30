@@ -1,0 +1,63 @@
+<view class="page">
+  <!-- Agent 身份卡 -->
+  <view class="card">
+    <view class="row">
+      <view class="avatar" style="width:100rpx;height:100rpx;font-size:48rpx;">🤖</view>
+      <view class="grow" style="margin-left: 20rpx;">
+        <view class="bold" style="font-size: 32rpx;">{{agentSlug ? '@' + agentSlug : '未绑定 Agent'}}</view>
+        <view class="muted" style="margin-top: 8rpx;">
+          实时通道：{{wsStatus === 'online' ? '🟢 在线' : '⚪ 离线'}}
+        </view>
+      </view>
+      <view wx:if="{{agentSlug}}" class="btn plain btn-sm" bindtap="unbind">解绑</view>
+      <view wx:else class="btn btn-sm" bindtap="goBind">去绑定</view>
+    </view>
+  </view>
+
+  <!-- 功能入口 -->
+  <view class="card list">
+    <view class="item" bindtap="goCard">
+      <text class="item-icon">📇</text>
+      <view class="grow">
+        <view>我的名片</view>
+        <view class="muted">可转发给微信好友 / 群，扫码加联系人</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+
+    <view class="item" bindtap="goFactory">
+      <text class="item-icon">🧠</text>
+      <view class="grow">
+        <view>助理能力配置</view>
+        <view class="muted">FAQ / 产品知识库，保存即生效</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+
+    <view class="item" bindtap="{{owner ? '' : 'goLogin'}}">
+      <text class="item-icon">🔑</text>
+      <view class="grow">
+        <view>{{owner ? '已登录：' + owner.name : '登录主人账号'}}</view>
+        <view class="muted">{{owner ? (owner.org || '') : '可选，用于主人侧管理'}}</view>
+      </view>
+      <view wx:if="{{owner}}" class="btn plain btn-sm" catchtap="logout">退出</view>
+      <text wx:else class="muted">›</text>
+    </view>
+  </view>
+
+  <!-- 设置 -->
+  <view class="card list">
+    <view class="item" bindtap="editBaseUrl">
+      <text class="item-icon">🌐</text>
+      <view class="grow">
+        <view>服务地址</view>
+        <view class="muted ellipsis">{{baseUrl}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+  </view>
+
+  <view class="muted" style="text-align:center; margin-top: 30rpx;">
+    AgentNexus v2.0 · 企业 Agent 协作平台 · MIT
+  </view>
+</view>

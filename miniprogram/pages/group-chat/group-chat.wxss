@@ -1,0 +1,45 @@
+.group-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f6f8fc;
+}
+.tabs {
+  display: flex;
+  background: #fff;
+  padding: 14rpx 20rpx;
+  gap: 12rpx;
+  border-bottom: 2rpx solid #eef1f6;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  border-radius: 16rpx;
+  background: #f2f5fb;
+  color: #6b7590;
+  font-size: 26rpx;
+}
+.tab.on {
+  background: #edf1ff;
+  color: #4f6bff;
+  font-weight: 600;
+}
+.tab.members {
+  flex: 0 0 150rpx;
+}
+.msg-list {
+  flex: 1;
+  padding: 24rpx 24rpx 0;
+  box-sizing: border-box;
+}
+.task-list {
+  flex: 1;
+  padding: 20rpx 24rpx;
+  box-sizing: border-box;
+}
+.bubble-from {
+  font-size: 20rpx;
+  color: #98a1b5;
+  margin-bottom: 6rpx;
+}

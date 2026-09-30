@@ -1,0 +1,80 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+
+  <block wx:else>
+    <!-- 能力开关 -->
+    <view class="card">
+      <view class="bold" style="margin-bottom: 8rpx;">能力开关 · @{{slug}}</view>
+      <view class="cap-item" data-key="secretary" bindtap="toggleCap">
+        <text class="grow">🗓️ 秘书（预约 / 提醒）</text>
+        <switch checked="{{capabilities.secretary}}" color="#4F6BFF" />
+      </view>
+      <view class="cap-item" data-key="sales" bindtap="toggleCap">
+        <text class="grow">🤝 销售（推荐 / 报价 / 线索）</text>
+        <switch checked="{{capabilities.sales}}" color="#4F6BFF" />
+      </view>
+      <view class="cap-item" data-key="ticket" bindtap="toggleCap">
+        <text class="grow">🎫 客服（工单 / 转人工）</text>
+        <switch checked="{{capabilities.ticket}}" color="#4F6BFF" />
+      </view>
+    </view>
+
+    <!-- FAQ 知识库 -->
+    <view class="card">
+      <view class="row-between">
+        <text class="bold">FAQ 知识库（{{faq.length}} 条）</text>
+        <text class="add-btn" bindtap="addFaq">＋ 添加</text>
+      </view>
+
+      <view wx:if="{{faq.length === 0}}" class="muted" style="margin-top: 16rpx;">
+        还没有 FAQ：添加「触发关键词 → 标准答案」，对方提问命中即自动回复。
+      </view>
+
+      <view class="faq-item" wx:for="{{faq}}" wx:key="index">
+        <view class="input-label">触发关键词（逗号分隔）</view>
+        <input class="input" value="{{item.keywordsText}}" placeholder="例：退货, 退款"
+               data-index="{{index}}" data-key="keywordsText" bindinput="onFaqField" />
+        <view class="input-label">标准答案</view>
+        <textarea class="input area" value="{{item.answer}}" placeholder="例：7 天无理由退货，原包装寄回即可。"
+                  data-index="{{index}}" data-key="answer" bindinput="onFaqField" auto-height />
+        <view class="del" data-index="{{index}}" bindtap="removeFaq">删除本条</view>
+      </view>
+    </view>
+
+    <!-- 产品知识库 -->
+    <view class="card">
+      <view class="row-between">
+        <text class="bold">产品知识库（{{products.length}} 条）</text>
+        <text class="add-btn" bindtap="addProduct">＋ 添加</text>
+      </view>
+
+      <view wx:if="{{products.length === 0}}" class="muted" style="margin-top: 16rpx;">
+        还没有产品：录入名称、关键词、卖点与报价区间，销售场景自动推荐。
+      </view>
+
+      <view class="faq-item" wx:for="{{products}}" wx:key="index">
+        <view class="input-label">产品名称</view>
+        <input class="input" value="{{item.name}}" placeholder="例：工业机床 X1"
+               data-index="{{index}}" data-key="name" bindinput="onProductField" />
+        <view class="input-label">触发关键词</view>
+        <input class="input" value="{{item.keywordsText}}" placeholder="例：机床, x1"
+               data-index="{{index}}" data-key="keywordsText" bindinput="onProductField" />
+        <view class="input-label">卖点</view>
+        <input class="input" value="{{item.pitch}}" placeholder="例：高精度、交期短"
+               data-index="{{index}}" data-key="pitch" bindinput="onProductField" />
+        <view class="input-label">报价区间</view>
+        <input class="input" value="{{item.priceRange}}" placeholder="例：10-20 万"
+               data-index="{{index}}" data-key="priceRange" bindinput="onProductField" />
+        <view class="input-label">追问话术</view>
+        <input class="input" value="{{item.followup}}" placeholder="例：需要参数手册吗？"
+               data-index="{{index}}" data-key="followup" bindinput="onProductField" />
+        <view class="del" data-index="{{index}}" bindtap="removeProduct">删除本条</view>
+      </view>
+    </view>
+
+    <view class="btn" bindtap="{{saving ? '' : 'save'}}">
+      {{saving ? '保存中…' : '💾 保存配置（保存即生效）'}}
+    </view>
+    <view class="safe-bottom"></view>
+  </block>
+</view>

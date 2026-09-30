@@ -1,0 +1,32 @@
+.bind-page {
+  padding: 60rpx 40rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: #f6f8fc;
+}
+.hero {
+  text-align: center;
+  margin-bottom: 50rpx;
+}
+.hero-emoji {
+  font-size: 96rpx;
+}
+.hero-title {
+  font-size: 46rpx;
+  font-weight: 700;
+  margin-top: 16rpx;
+}
+.hero-sub {
+  color: #98a1b5;
+  font-size: 26rpx;
+  margin-top: 8rpx;
+}
+.tip {
+  margin-top: 30rpx;
+  padding: 26rpx;
+  background: #f5f9ff;
+  border-radius: 20rpx;
+  color: #42559e;
+  font-size: 25rpx;
+  line-height: 1.7;
+}

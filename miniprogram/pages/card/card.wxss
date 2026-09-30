@@ -1,0 +1,37 @@
+.card-main {
+  padding: 44rpx 28rpx;
+}
+.avatar.big {
+  width: 160rpx;
+  height: 160rpx;
+  font-size: 80rpx;
+  margin: 0 auto;
+  border-radius: 44rpx;
+}
+.tag-row {
+  margin-top: 24rpx;
+  text-align: center;
+}
+.divider {
+  height: 2rpx;
+  background: #f2f4f9;
+  margin: 28rpx 0;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14rpx 0;
+  font-size: 27rpx;
+}
+.share-btn {
+  background: #4f6bff;
+  color: #fff;
+  border-radius: 20rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  padding: 0;
+}
+.share-btn::after {
+  border: none;
+}

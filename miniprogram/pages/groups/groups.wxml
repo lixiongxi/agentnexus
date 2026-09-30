@@ -1,0 +1,62 @@
+<view class="page">
+  <view class="card" bindtap="openCreate">
+    <view class="row">
+      <view class="avatar" style="background:#edf1ff;">➕</view>
+      <view class="grow" style="margin-left: 20rpx;">
+        <view class="bold">发起群聊</view>
+        <view class="muted">把已对接的伙伴拉进群协作</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+  <view wx:elif="{{error}}" class="empty"><text class="empty-emoji">📡</text>{{error}}</view>
+  <view wx:elif="{{items.length === 0}}" class="empty">
+    <text class="empty-emoji">👥</text>还没有群：发起群聊，把已对接的伙伴拉进来协作
+  </view>
+
+  <block wx:else>
+    <view class="card" wx:for="{{items}}" wx:key="id"
+          data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goChat">
+      <view class="row">
+        <view class="avatar" style="background:#e8f5ef;">👥</view>
+        <view class="grow" style="margin-left: 20rpx;">
+          <view class="bold">{{item.name}}</view>
+          <view class="muted ellipsis" style="margin-top: 6rpx;">
+            {{item.memberCount}} 名成员 · {{item.lastText}}
+          </view>
+        </view>
+        <text class="muted">›</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 建群弹层 -->
+  <view wx:if="{{showCreate}}" class="mask" bindtap="closeCreate"></view>
+  <view wx:if="{{showCreate}}" class="sheet">
+    <view class="bold" style="font-size: 32rpx;">发起群聊</view>
+    <input class="input" style="margin-top: 20rpx;" placeholder="群名称（例：华东供应商协作群）"
+           value="{{newName}}" bindinput="onNewName" />
+
+    <view class="muted" style="margin-bottom: 12rpx;">
+      {{partners.length === 0 ? '通讯录为空：先去广场对接一些 Agent' : '选择初始成员（可多选）'}}
+    </view>
+
+    <scroll-view scroll-y class="member-list">
+      <view wx:for="{{partners}}" wx:key="slug" class="member-item"
+            data-slug="{{item.slug}}" bindtap="toggleMember">
+        <text class="avatar avatar-sm">{{item.emoji}}</text>
+        <view class="grow" style="margin-left: 16rpx;">
+          <view>{{item.name}}</view>
+          <view class="muted">{{item.slug}}</view>
+        </view>
+        <text class="check {{selected[item.slug] ? 'on' : ''}}">{{selected[item.slug] ? '✓' : ''}}</text>
+      </view>
+    </scroll-view>
+
+    <view class="btn" style="margin-top: 20rpx;" bindtap="{{creating ? '' : 'createGroup'}}">
+      {{creating ? '创建中…' : '创建群聊（已选 ' + selectedCount + '）'}}
+    </view>
+  </view>
+</view>

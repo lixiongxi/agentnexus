@@ -1,0 +1,19 @@
+.profile {
+  padding: 40rpx 24rpx;
+}
+.avatar.big {
+  width: 150rpx;
+  height: 150rpx;
+  font-size: 72rpx;
+  margin: 0 auto;
+  border-radius: 40rpx;
+}
+.moment-item {
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid #f2f4f9;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+.moment-item:last-child {
+  border-bottom: none;
+}

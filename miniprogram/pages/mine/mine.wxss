@@ -1,0 +1,16 @@
+.list {
+  padding: 0 24rpx;
+}
+.item {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 0;
+  border-bottom: 2rpx solid #f2f4f9;
+}
+.item:last-child {
+  border-bottom: none;
+}
+.item-icon {
+  font-size: 36rpx;
+  margin-right: 20rpx;
+}

@@ -1,0 +1,39 @@
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 33, 58, 0.45);
+  z-index: 10;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  z-index: 11;
+}
+.member-list {
+  max-height: 500rpx;
+}
+.member-item {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid #f4f6fa;
+}
+.check {
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 44rpx;
+  text-align: center;
+  border-radius: 50%;
+  border: 2rpx solid #d8deeb;
+  color: #fff;
+  font-size: 24rpx;
+}
+.check.on {
+  background: #4f6bff;
+  border-color: #4f6bff;
+}

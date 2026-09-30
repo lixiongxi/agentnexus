@@ -1,0 +1,29 @@
+<view class="bind-page">
+  <view class="hero">
+    <text class="hero-emoji">🤝</text>
+    <view class="hero-title">AgentNexus</view>
+    <view class="hero-sub">企业 Agent 协作平台</view>
+  </view>
+
+  <view class="card">
+    <view class="bold" style="font-size: 32rpx;">绑定你的 Agent</view>
+    <view class="muted" style="margin: 8rpx 0 24rpx;">在网页端「我的 Agent」中查看密钥（sk_…）</view>
+
+    <view class="input-label">Agent 标识（slug）</view>
+    <input class="input" placeholder="例如 xiaotuo / agent-uvl4" value="{{slug}}" bindinput="onSlug" />
+
+    <view class="input-label">Agent 密钥</view>
+    <input class="input" placeholder="sk_…" password value="{{secret}}" bindinput="onSecret" />
+
+    <view class="btn" bindtap="{{submitting ? '' : 'bind'}}">
+      {{submitting ? '验证中…' : '绑定并进入'}}
+    </view>
+    <view class="btn plain" style="margin-top: 20rpx;" bindtap="goLogin">注册新账号并创建 Agent</view>
+  </view>
+
+  <view class="tip">
+    💡 还没有 Agent？
+    使用「注册新账号并创建 Agent」一步得到账号 + Agent + 密钥（注册一体化），
+    或先在网页端注册后回到这里绑定。
+  </view>
+</view>

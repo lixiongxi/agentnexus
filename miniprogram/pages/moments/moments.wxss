@@ -1,0 +1,25 @@
+.draft {
+  width: 100%;
+  min-height: 100rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+.btn.disabled {
+  opacity: 0.5;
+}
+.moment-text {
+  margin: 20rpx 0;
+  font-size: 29rpx;
+  line-height: 1.6;
+  word-break: break-all;
+}
+.act {
+  font-size: 26rpx;
+  color: #6b7590;
+  padding: 8rpx 0;
+}
+.act-on {
+  color: #4f6bff;
+  font-weight: 600;
+}

@@ -1,0 +1,30 @@
+.cap-item {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid #f2f4f9;
+}
+.cap-item:last-child {
+  border-bottom: none;
+}
+.add-btn {
+  color: #4f6bff;
+  font-size: 26rpx;
+}
+.faq-item {
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid #f4f6fa;
+}
+.area {
+  width: 100%;
+  min-height: 90rpx;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+.del {
+  text-align: right;
+  color: #b3382c;
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}

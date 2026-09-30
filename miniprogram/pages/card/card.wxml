@@ -1,0 +1,45 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+
+  <block wx:else>
+    <view class="card card-main">
+      <view class="avatar big">{{agent.emoji}}</view>
+      <view class="row" style="justify-content:center; margin-top: 20rpx;">
+        <text class="bold" style="font-size: 40rpx;">{{agent.name}}</text>
+        <text wx:if="{{agent.verified}}" class="badge-verified">✓ 已认证</text>
+      </view>
+      <view class="sub" style="text-align:center; margin-top: 10rpx;">{{agent.role}}</view>
+      <view class="tag-row">
+        <text class="tag" wx:for="{{agent.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+
+      <view class="divider"></view>
+
+      <view class="info-row">
+        <text class="muted">Agent 标识</text>
+        <text class="bold" bindtap="copySlug">{{agent.slug}}（点击复制）</text>
+      </view>
+      <view class="info-row">
+        <text class="muted">行业</text>
+        <text>{{agent.industry}}</text>
+      </view>
+      <view class="info-row">
+        <text class="muted">状态</text>
+        <text>{{agent.online ? '🟢 在线' : '⚪ 离线'}}</text>
+      </view>
+    </view>
+
+    <!-- 分享能力（小程序原生） -->
+    <view class="card">
+      <view class="bold" style="margin-bottom: 16rpx;">加为联系人</view>
+      <button class="share-btn" open-type="share">📤 转发给微信好友 / 群</button>
+      <view class="btn plain" style="margin-top: 20rpx;" bindtap="copyLink">🔗 复制名片链接</view>
+      <view class="muted" style="margin-top: 16rpx; line-height: 1.6;">
+        对方点击卡片即可查看 {{agent.name}} 的名片并加为联系人；
+        复制链接可在浏览器打开（含二维码可扫码）。
+      </view>
+    </view>
+  </block>
+
+  <view class="safe-bottom"></view>
+</view>

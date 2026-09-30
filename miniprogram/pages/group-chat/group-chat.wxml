@@ -1,0 +1,65 @@
+<view class="group-page">
+  <!-- tab 切换 -->
+  <view class="tabs">
+    <view class="tab {{tab === 'chat' ? 'on' : ''}}" data-tab="chat" bindtap="switchTab">💬 聊天</view>
+    <view class="tab {{tab === 'tasks' ? 'on' : ''}}" data-tab="tasks" bindtap="switchTab">📋 任务</view>
+    <view class="tab members" bindtap="goMembers">👥 {{members.length}}</view>
+  </view>
+
+  <!-- 聊天 -->
+  <block wx:if="{{tab === 'chat'}}">
+    <scroll-view class="msg-list" scroll-y scroll-into-view="{{scrollInto}}" scroll-with-animation>
+      <view wx:if="{{loading}}" class="empty"><text class="empty-emoji">⏳</text>加载中…</view>
+      <view wx:elif="{{error}}" class="empty"><text class="empty-emoji">🚫</text>{{error}}</view>
+      <view wx:elif="{{items.length === 0}}" class="empty">
+        <text class="empty-emoji">💬</text>
+        说点什么，@助理 召唤助理，
+        或「@成员 任务：描述」分派任务
+      </view>
+      <block wx:else>
+        <view wx:for="{{items}}" wx:key="id" id="{{item.anchor}}"
+              class="bubble-wrap {{item.mine ? 'mine' : ''}}">
+          <view class="bubble {{item.mine ? 'mine' : ''}} {{item.isBot ? 'bot' : ''}}">
+            <view wx:if="{{!item.mine}}" class="bubble-from">
+              {{item.fromEmoji}} {{item.fromName}}
+            </view>
+            <view>{{item.text}}</view>
+            <view class="bubble-meta">{{item.timeText}}</view>
+          </view>
+        </view>
+        <view style="height: 20rpx;"></view>
+      </block>
+    </scroll-view>
+
+    <view class="input-bar">
+      <input class="input" value="{{text}}" bindinput="onInput" confirm-type="send"
+             bindconfirm="send" placeholder="发消息…（@成员 任务：描述 分派）" />
+      <view class="send-btn" bindtap="{{sending ? '' : 'send'}}">{{sending ? '…' : '发送'}}</view>
+    </view>
+  </block>
+
+  <!-- 任务面板 -->
+  <scroll-view wx:else class="task-list" scroll-y>
+    <view wx:if="{{tasks.length === 0}}" class="empty">
+      <text class="empty-emoji">📋</text>
+      暂无任务：聊天里输入「@成员 任务：描述」即可分派
+    </view>
+
+    <view class="card" wx:for="{{tasks}}" wx:key="id">
+      <view class="row-between">
+        <text class="bold grow ellipsis">{{item.taskCode}} · {{item.title}}</text>
+        <text class="pill {{item.pillClass}}">{{item.statusText}}</text>
+      </view>
+      <view class="muted" style="margin-top: 10rpx;">
+        指派给 {{item.assigneeName}} · 由 {{item.creatorSlug}} 创建
+      </view>
+      <view wx:if="{{item.canOperate && item.next.length > 0}}" class="row" style="gap: 16rpx; margin-top: 16rpx;">
+        <view wx:for="{{item.next}}" wx:for-item="st" wx:key="*this"
+              class="btn plain btn-sm" data-id="{{item.id}}" data-status="{{st}}" bindtap="flow">
+          标记为 {{st === 'working' ? '进行中' : (st === 'done' ? '已完成' : '已失败')}}
+        </view>
+      </view>
+    </view>
+    <view style="height: 60rpx;"></view>
+  </scroll-view>
+</view>

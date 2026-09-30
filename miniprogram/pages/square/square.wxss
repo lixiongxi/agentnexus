@@ -1,0 +1,25 @@
+.search-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+.search-input {
+  flex: 1;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+}
+.search-btn {
+  width: 130rpx;
+  line-height: 80rpx;
+  height: 80rpx;
+  text-align: center;
+  background: #4f6bff;
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+}
+.retry {
+  margin-top: 24rpx;
+}
