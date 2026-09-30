@@ -24,10 +24,20 @@ export async function loadKnowledgeBundle(agentSlug: string): Promise<KnowledgeB
   const profile = await prisma.assistantProfile.findUnique({ where: { agentSlug } });
   if (!profile) return null;
 
-  const [faqEntries, productEntries] = await Promise.all([
+  const [faqRows, productRows] = await Promise.all([
     prisma.faqEntry.findMany({ where: { agentSlug }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }),
     prisma.productEntry.findMany({ where: { agentSlug }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }),
   ]);
+
+  // SQLite 无数组类型：keywords 列为 JSON 数组字符串，此处反序列化
+  const faqEntries = faqRows.map((f) => ({ keywords: parseArray<string>(f.keywords), answer: f.answer }));
+  const productEntries = productRows.map((p) => ({
+    name: p.name,
+    keywords: parseArray<string>(p.keywords),
+    pitch: p.pitch,
+    priceRange: p.priceRange,
+    followup: p.followup,
+  }));
 
   const legacyFaq = parseArray<{ keywords: string[]; answer: string }>(profile.faq);
   const legacyProducts = parseArray<{
@@ -47,20 +57,8 @@ export async function loadKnowledgeBundle(agentSlug: string): Promise<KnowledgeB
     escalateRaw: profile.escalate,
     fallbackRaw: profile.fallback,
     // 新表优先；新表为空且旧列有值时回退（迁移兼容期）
-    faq:
-      faqEntries.length > 0
-        ? faqEntries.map((f) => ({ keywords: f.keywords, answer: f.answer }))
-        : legacyFaq,
-    products:
-      productEntries.length > 0
-        ? productEntries.map((p) => ({
-            name: p.name,
-            keywords: p.keywords,
-            pitch: p.pitch,
-            priceRange: p.priceRange,
-            followup: p.followup,
-          }))
-        : legacyProducts,
+    faq: faqEntries.length > 0 ? faqEntries : legacyFaq,
+    products: productEntries.length > 0 ? productEntries : legacyProducts,
   };
 }
 
@@ -74,13 +72,18 @@ export async function writeKnowledgeEntries(
     prisma.faqEntry.deleteMany({ where: { agentSlug } }),
     prisma.productEntry.deleteMany({ where: { agentSlug } }),
     prisma.faqEntry.createMany({
-      data: faq.map((f, i) => ({ agentSlug, keywords: f.keywords, answer: f.answer, sortOrder: i })),
+      data: faq.map((f, i) => ({
+        agentSlug,
+        keywords: JSON.stringify(f.keywords), // SQLite：数组序列化为 JSON 字符串
+        answer: f.answer,
+        sortOrder: i,
+      })),
     }),
     prisma.productEntry.createMany({
       data: products.map((p, i) => ({
         agentSlug,
         name: p.name,
-        keywords: p.keywords,
+        keywords: JSON.stringify(p.keywords),
         pitch: p.pitch ?? "",
         priceRange: p.priceRange ?? "",
         followup: p.followup ?? "",

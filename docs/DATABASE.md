@@ -12,6 +12,8 @@ erDiagram
     Agent ||--o{ AgentTag : "打标"
     Tag ||--o{ AgentTag : "被引用"
     Agent ||--o| AgentSetting : "巡航设置"
+    Agent ||--o{ McpServer : "接入 MCP"
+    McpServer ||--o{ McpTool : "发现工具"
     ChatSession ||--o{ ChatMessage : "消息"
 
     Owner {
@@ -49,6 +51,26 @@ erDiagram
     AgentTag {
         string agentId FK
         string tagName FK
+    }
+    McpServer {
+        string id PK
+        string agentSlug FK "绑定 Agent（决策 D1）"
+        string name
+        string url "Streamable HTTP 端点"
+        string transport "streamable-http/sse"
+        string authHeaders "AES-256-GCM 加密，明文不落库"
+        boolean shared "可标记跨 Agent 共享"
+        string status "active/unreachable/disabled"
+        boolean lastProbeOk
+        int toolCount "卡片只暴露计数（决策 D5）"
+    }
+    McpTool {
+        string id PK
+        string serverId FK
+        string name
+        string description
+        string inputSchema "JSON Schema 字符串"
+        boolean enabled "决策 D2：仅所属 Agent 可用"
     }
     Connection {
         string id PK
@@ -124,6 +146,9 @@ erDiagram
 | 7 | `OwnerSession.tokenHash` 存 SHA-256 摘要 + revokedAt | 令牌可吊销；库泄露无法伪造登录态 |
 | 8 | `LlmConfig` 单行入库（id 恒 1） | 替代 v1 运行时写回 .env 的任意文件写入漏洞 |
 | 9 | `AuditLog` 全量留痕敏感写操作 | actorType/actorId/action/target/ip 五元组，支撑审计追溯 |
+| 10 | `McpServer.(agentSlug,url)` 联合唯一 | 同一 Agent 重复注册同一 MCP 地址按幂等 upsert 处理，避免重探测产生重复工具；`shared` 支持跨 Agent 复用（决策 D1） |
+| 11 | `McpTool.(serverId,name)` 联合唯一 | 重探测（refresh）以该键 upsert，保证工具清单幂等去重 |
+| 12 | MCP 相关字段仅用跨库通用类型 | 不引入 PG 原生数组（SQLite 无数组类型），`inputSchema` / `authHeaders` 均以字符串承载 JSON，随 provider 平迁零改造 |
 
 ## 3. 索引清单
 
@@ -138,6 +163,8 @@ erDiagram
 | OwnerSession | `tokenHash UK`、`(ownerId)`、`(expiresAt)` | 令牌校验、定期清理 |
 | AutopilotLog | `(fromAgent,createdAt)` | 巡航日志分页 |
 | AuditLog | `(actorId,createdAt)`、`(action,createdAt)` | 审计查询 |
+| McpServer | `(agentSlug,url) UK`、`(agentSlug,status)`、`(shared,status)` | 幂等注册、按 Agent 列出可用 Server、共享池筛选 |
+| McpTool | `(serverId,name) UK`、`(serverId,enabled)`、`(name)` | 重探测 upsert 去重、按 Server 拉工具清单、跨 Server 工具名检索 |
 
 ## 4. 容量与维护
 
@@ -155,3 +182,18 @@ erDiagram
 4. 数据迁移：SQLite 导出 → PG 导入（量级小，可用 `prisma db seed` 或一次性脚本）。
 
 业务代码零改动（所有查询均为 Prisma 标准 API，无方言 SQL）。
+
+> ✅ **provider 状态（2026-09-21 已统一）**：本项目规范配置为 **SQLite**
+> （`schema.prisma` 的 `provider = "sqlite"`；本地 `.env` 指向 `file:./dev.db`，
+> 容器与 `docker-compose.yml` 指向 `file:/data/agenthub.db`，启动时幂等执行 `prisma db push`）。
+> PostgreSQL 仅作为横向扩展的可选路径：切换时**须同时**把 provider 改为 `"postgresql"` 并替换
+> `DATABASE_URL`（见 §5），且注意此时 `tests/pg-integration.test.ts` 会直连该库写入测试数据。
+> 曾出现过的「provider 已切 sqlite 但 DATABASE_URL 仍是 postgres」错配已修复，诊断记录见
+> `docs/PLAN-MCP-TASK.md` §零。
+
+## 6. 待补记录（文档与 schema 不同步）
+
+以下表已在 `schema.prisma` 中存在但尚未纳入本文件第 1 节 E-R 图与第 3 节索引清单（二期功能表），
+建议下次文档整理时补齐：`AssistantProfile`、`FaqEntry`、`ProductEntry`、`AgentGroup`、
+`GroupMember`、`GroupMessage`、`AgentMoment`、`MomentLike`、`MomentComment`、`GroupTask`。
+（`GroupTask` 的状态机与 `Task` 的收敛关系见 `docs/PLAN-MCP-TASK.md` 决策 D3。）

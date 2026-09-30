@@ -5,6 +5,7 @@ import { audit, clientIp } from "../../core/audit";
 import { AppError, ErrorCode } from "../../core/errors";
 import { prisma } from "../../db/client";
 import { registerAdminDebugRoutes } from "./debug";
+import { exportSnapshot, restoreSnapshot, writeDailyBackup } from "../../lib/backup";
 import { getLlmConfig, setLlmConfig, testLlmConnection } from "../../lib/llm";
 import { toPublicView } from "../agents/service";
 import { auditQuerySchema, llmConfigSchema, verifySchema } from "./schema";
@@ -68,6 +69,45 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
     });
 
     return { slug: updated.slug, status: updated.status };
+  });
+
+  /* ---------- 数据备份与恢复（v3 持久化保障） ---------- */
+
+  // 导出全量业务数据快照（本地可定时拉取存档）
+  app.get("/api/admin/backup", { preHandler: [requireAdminAuth] }, async () => {
+    const data = await exportSnapshot();
+    const counts = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.length]));
+    return { exportedAt: new Date().toISOString(), counts, data };
+  });
+
+  // 立即写一份每日快照到服务端 backups/ 目录
+  app.post("/api/admin/backup/snapshot", { preHandler: [requireAdminAuth] }, async (req) => {
+    const file = await writeDailyBackup();
+    await audit({
+      actorType: "admin",
+      actorId: "admin",
+      action: "backup.snapshot",
+      target: file,
+      ip: clientIp(req.headers),
+    });
+    return { file };
+  });
+
+  // 从快照恢复（body 即 exportSnapshot 结构 { data: {...} } 或裸快照）
+  app.post("/api/admin/restore", { preHandler: [requireAdminAuth] }, async (req, reply) => {
+    const body = req.body as { data?: Record<string, unknown[]> } | Record<string, unknown[]> | null;
+    const snap = (body as { data?: Record<string, unknown[]> })?.data ?? body;
+    if (!snap || typeof snap !== "object") throw new AppError(ErrorCode.VALIDATION_ERROR, "快照格式无效");
+    await restoreSnapshot(snap as Record<string, unknown[]>);
+    await audit({
+      actorType: "admin",
+      actorId: "admin",
+      action: "backup.restore",
+      detail: `tables=${Object.keys(snap as object).length}`,
+      ip: clientIp(req.headers),
+    });
+    reply.code(200);
+    return { restored: true };
   });
 
   /* ---------- LLM 配置：读取（Key 脱敏） ---------- */

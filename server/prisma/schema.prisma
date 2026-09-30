@@ -21,7 +21,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -83,6 +83,7 @@ model Agent {
   assistantProfile AssistantProfile?
   faqEntries       FaqEntry[]
   productEntries   ProductEntry[]
+  mcpServers       McpServer[]
 
   @@index([industry])
   @@index([verified, status])
@@ -109,11 +110,12 @@ model AssistantProfile {
 }
 
 /// 知识库 · FAQ 条目（触发关键词 → 标准答案；逐条独立管理）
+/// SQLite 无数组类型：keywords 以 JSON 数组字符串存储（lib/knowledge.ts 统一序列化）
 model FaqEntry {
   id        String   @id @default(cuid())
   agentSlug String
   agent     Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
-  keywords  String[] // PG 原生字符串数组
+  keywords  String   @default("[]") // JSON 数组字符串
   answer    String
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
@@ -128,7 +130,7 @@ model ProductEntry {
   agentSlug  String
   agent      Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
   name       String
-  keywords   String[]
+  keywords   String   @default("[]") // JSON 数组字符串
   pitch      String   @default("")
   priceRange String   @default("")
   followup   String   @default("")
@@ -137,6 +139,58 @@ model ProductEntry {
   updatedAt  DateTime @updatedAt
 
   @@index([agentSlug])
+}
+
+/// ============================================================
+/// MCP 接入层（docs/PLAN-MCP-TASK.md 工作流 A · 阶段 1 / A1）
+/// 决策依据（2026-09-21 已定稿）：
+///   D1 = 绑定 Agent + 可标记共享（shared 字段）
+///   D2 = 工具仅所属 Agent 可调用（权限判定在 A4 落地，此层只存事实）
+///   D5 = Agent Card 只暴露端点与工具计数，不暴露入参 schema
+/// 兼容性约束：仅使用 String/Boolean/Int/DateTime 等跨库通用类型，
+/// 不使用 PG 原生数组（SQLite 无数组类型），可直接随 provider 平迁。
+/// ============================================================
+
+/// 注册进平台的 MCP Server（外部工具服务）——平台作为 MCP Client 接入
+model McpServer {
+  id          String    @id @default(cuid())
+  agentSlug   String
+  agent       Agent     @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
+  name        String
+  url         String // Streamable HTTP 端点
+  transport   String    @default("streamable-http") // streamable-http / sse
+  authHeaders String    @default("") // 鉴权头 JSON，AES-256-GCM 加密存储（复用 lib/crypto.ts），明文不落库
+  shared      Boolean   @default(false) // 决策 D1：可标记为跨 Agent 共享
+  status      String    @default("active") // active / unreachable / disabled
+  lastProbeOk Boolean   @default(false) // 最近一次刷新探测结果
+  lastProbeAt DateTime?
+  lastError   String    @default("")
+  toolCount   Int       @default(0) // 决策 D5：卡片只暴露计数
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tools McpTool[]
+
+  @@unique([agentSlug, url]) // 同一 Agent 同一地址重复注册按幂等处理
+  @@index([agentSlug, status])
+  @@index([shared, status])
+}
+
+/// MCP 工具发现结果（探测 listTools 的持久化快照，供跨 Server 检索）
+model McpTool {
+  id           String    @id @default(cuid())
+  serverId     String
+  server       McpServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  name         String
+  description  String    @default("")
+  inputSchema  String    @default("{}") // JSON Schema 字符串（SQLite 无 JSON 列类型）
+  enabled      Boolean   @default(true)
+  discoveredAt DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([serverId, name]) // 重探测 upsert 去重键
+  @@index([serverId, enabled])
+  @@index([name])
 }
 
 /// 群组：多 Agent 协作空间（企业 Agent 微信 · 群聊）

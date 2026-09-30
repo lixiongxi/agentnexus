@@ -5,6 +5,7 @@ import { assertSafeStartup, config } from "./core/config";
 import { SEED_AGENT_SLUGS } from "./core/constants";
 import { buildApp } from "./app";
 import { disconnectDb } from "./db/client";
+import { autoBackupTick, restoreLatestIfEmpty } from "./lib/backup";
 import { purgeExpiredSessions } from "./modules/auth/service";
 import { listCruiseTargets, pruneLogs, runAutopilot } from "./modules/autopilot/service";
 
@@ -38,11 +39,12 @@ async function autopilotTick(): Promise<void> {
   }
 }
 
-/** 清理任务：过期会话 + 超额巡航日志 */
+/** 清理任务：过期会话 + 超额巡航日志 + 每日数据快照 */
 async function maintenanceTick(): Promise<void> {
   try {
     const sessions = await purgeExpiredSessions();
     const logs = await pruneLogs();
+    await autoBackupTick();
     if (sessions > 0 || logs > 0) {
       app.log.info(`[maintenance] 清理过期会话 ${sessions} 条 / 超额巡航日志 ${logs} 条`);
     }
@@ -53,6 +55,11 @@ async function maintenanceTick(): Promise<void> {
 
 const autopilotTimer = setInterval(autopilotTick, config.autopilot.intervalMs);
 const maintenanceTimer = setInterval(maintenanceTick, 60 * 60 * 1000); // 每小时
+
+// 启动自愈：库为空且存在备份快照 → 自动恢复最新一份（换沙箱/换库后数据不丢）
+void restoreLatestIfEmpty().then((restored) => {
+  if (restored) app.log.info(`[backup] 检测到空库，已从快照恢复: ${restored}`);
+});
 
 // 启动后延迟首跑，避免与初始化/迁移争抢资源
 const firstRunTimer = setTimeout(() => {
