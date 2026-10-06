@@ -67,9 +67,19 @@ export function registerErrorHandlers(app: FastifyInstance): void {
 /**
  * 统一成功包装：把路由返回值包成 { ok: true, data }。
  * 路由直接 return 业务数据即可，无需手动 ok(...)。
+ *
+ * 豁免：对外标准协议端点（A2A Agent Card / RFC 7517 JWKS 等）必须返回裸 JSON，
+ * 否则外部标准客户端（A2A 生态、JWT 验签库）因无法识别信封而解析失败。
+ * 路由内设置响应头 `x-skip-envelope: 1` 即可跳过包装（该头会在响应中移除）。
  */
 export function registerSuccessSerializer(app: FastifyInstance): void {
   app.addHook("onSend", async (_req, reply, payload) => {
+    // 标准协议端点：裸返回
+    if (reply.getHeader("x-skip-envelope")) {
+      reply.removeHeader("x-skip-envelope");
+      return payload;
+    }
+
     const contentType = reply.getHeader("content-type");
     if (typeof contentType !== "string" || !contentType.includes("application/json")) {
       return payload;

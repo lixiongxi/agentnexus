@@ -80,8 +80,11 @@ export async function registerAgentRoutes(app: FastifyInstance): Promise<void> {
     return getAgentBySlug(slug);
   });
 
-  /* ---------- Agent Card（A2A 适配版，公开；能力自描述「名片」，平台签名） ---------- */
-  app.get("/api/agents/:slug/agent-card.json", async (req) => {
+  /* ---------- Agent Card（A2A 适配版，公开；能力自描述「名片」，平台签名） ----------
+   * 标准协议端点：返回裸 JSON（不加 { ok, data } 信封），
+   * 以便 A2A 生态客户端与第三方验签工具直接消费。 */
+  app.get("/api/agents/:slug/agent-card.json", async (req, reply) => {
+    reply.header("x-skip-envelope", "1");
     const { slug } = req.params as { slug: string };
     const view = await getAgentBySlug(slug);
     const record = await prisma.agent.findUnique({

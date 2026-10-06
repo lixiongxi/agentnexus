@@ -30,8 +30,13 @@ export async function registerSystemRoutes(app: FastifyInstance): Promise<void> 
     }
   });
 
-  /* ---------- 平台公钥 JWKS（公开；供第三方验证 Agent Card 签名） ---------- */
-  app.get("/.well-known/jwks.json", async () => jwksDocument());
+  /* ---------- 平台公钥 JWKS（公开；供第三方验证 Agent Card 签名） ----------
+   * 标准协议端点（RFC 7517）：返回裸 JSON，不加 { ok, data } 信封，
+   * 否则 JWT/JOSE 验签库无法直接读取 keys 数组。 */
+  app.get("/.well-known/jwks.json", async (_req, reply) => {
+    reply.header("x-skip-envelope", "1");
+    return jwksDocument();
+  });
 
   /* ---------- 系统信息（公开；仅暴露非敏感开关状态） ---------- */
   app.get("/api/system/info", async () => {

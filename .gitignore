@@ -35,3 +35,4 @@ server/prisma/*.db
 server/prisma/*.db-journal
 server/prisma/*.bak*
 backups/
+server/.tmp/
