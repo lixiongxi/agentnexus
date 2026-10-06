@@ -4,7 +4,7 @@
  *      → 下单 → 交付 → 完成 → 评价 → 案例沉淀 → 二次匹配分数提升
  */
 const crypto = require("node:crypto");
-const BASE = "http://127.0.0.1:3100";
+const BASE = process.env.E2E_BASE || "http://127.0.0.1:3000";
 const rnd = (n = 3) => crypto.randomBytes(n).toString("hex");
 const results = [];
 const ok = (n, extra = "") => { results.push(true); console.log(`✅ ${n}${extra ? " · " + extra : ""}`); };

@@ -5,7 +5,7 @@
  */
 const crypto = require("node:crypto");
 const fs = require("node:fs");
-const BASE = "http://127.0.0.1:3100";
+const BASE = process.env.E2E_BASE || "http://127.0.0.1:3000";
 // 管理员令牌：优先读 server/.env（本地实际配置），避免硬编码失效
 const ADMIN = (() => {
   try {
