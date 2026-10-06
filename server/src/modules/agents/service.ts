@@ -4,7 +4,7 @@
  * 数据访问直接使用 Prisma Client —— Prisma 本身已提供类型安全的 repository 抽象，
  * 再包一层 repo 只会增加样板代码而不带来实质收益（这是有意为之的取舍）。
  */
-import type { Agent, Owner } from "@prisma/client";
+import type { Agent, Owner, Prisma } from "@prisma/client";
 import { prisma } from "../../db/client";
 import { AppError, ErrorCode } from "../../core/errors";
 import type { Paged } from "../../core/response";
@@ -86,45 +86,52 @@ export async function registerAgent(input: RegisterAgentInput): Promise<Register
   const secretHash = encryptSecret(secret);
   const email = input.owner.email?.trim() || null;
 
-  const agent = await prisma.$transaction(async (tx) => {
-    // 同一邮箱视为同一主人，复用 Owner 记录，支持一人拥有多个 Agent
-    let owner: Owner | null = email ? await tx.owner.findFirst({ where: { email } }) : null;
+  const agent = await (async () => {
+    // 1) Owner 处理（事务外，幂等：同邮箱复用，避免交互式事务）
+    //    说明：交互式事务（$transaction(async tx => ...)）与 PgBouncer 事务池（Neon -pooler）不兼容，
+    //    统一改用批量事务（$transaction([...])），SQLite 与 PostgreSQL 均兼容。
+    let owner: Owner | null = email ? await prisma.owner.findFirst({ where: { email } }) : null;
     if (!owner) {
-      owner = await tx.owner.create({
+      owner = await prisma.owner.create({
         data: {
           name: input.owner.name,
-          org: input.owner.org,
+          org: input.owner.org ?? null,
           title: input.owner.title || null,
           email,
         },
       });
     }
 
-    // 标签字典 upsert，保证聚合统计时可去重
+    // 2) 标签字典 upsert + Agent 创建：批量事务按数组顺序执行
+    const ops: Prisma.PrismaPromise<unknown>[] = [];
     for (const name of tags) {
-      await tx.tag.upsert({ where: { name }, create: { name }, update: {} });
+      ops.push(prisma.tag.upsert({ where: { name }, create: { name }, update: {} }));
     }
+    ops.push(
+      prisma.agent.create({
+        data: {
+          slug: input.slug,
+          name: input.name,
+          emoji: input.emoji,
+          color: input.color,
+          role: input.role,
+          description: input.description,
+          industry: input.industry,
+          online: input.online,
+          autoAccept: input.autoAccept,
+          secretHash,
+          ownerId: owner.id,
+          mcpEndpoint: input.mcpEndpoint || null,
+          a2aEndpoint: input.a2aEndpoint || null,
+          tags: { create: tags.map((tagName) => ({ tagName })) },
+        },
+        include: includeRelations,
+      }),
+    );
 
-    return tx.agent.create({
-      data: {
-        slug: input.slug,
-        name: input.name,
-        emoji: input.emoji,
-        color: input.color,
-        role: input.role,
-        description: input.description,
-        industry: input.industry,
-        online: input.online,
-        autoAccept: input.autoAccept,
-        secretHash,
-        ownerId: owner.id,
-        mcpEndpoint: input.mcpEndpoint || null,
-        a2aEndpoint: input.a2aEndpoint || null,
-        tags: { create: tags.map((tagName) => ({ tagName })) },
-      },
-      include: includeRelations,
-    });
-  });
+    const results = await prisma.$transaction(ops);
+    return results[results.length - 1] as AgentWithRelations;
+  })();
 
   return { agent: toPublicView(agent), secret };
 }
@@ -202,19 +209,22 @@ export async function updateAgent(slug: string, input: UpdateAgentInput): Promis
   if (input.mcpEndpoint !== undefined) data["mcpEndpoint"] = input.mcpEndpoint || null;
   if (input.a2aEndpoint !== undefined) data["a2aEndpoint"] = input.a2aEndpoint || null;
 
-  const agent = await prisma.$transaction(async (tx) => {
-    if (input.tags) {
-      const tags = normalizeTags(input.tags);
-      for (const name of tags) {
-        await tx.tag.upsert({ where: { name }, create: { name }, update: {} });
-      }
-      await tx.agentTag.deleteMany({ where: { agentId: current.id } });
-      if (tags.length > 0) {
-        await tx.agentTag.createMany({ data: tags.map((tagName) => ({ agentId: current.id, tagName })) });
-      }
+  // 批量事务（与 PgBouncer 事务池兼容）：先 upsert 标签字典，再重建关联，最后更新 Agent
+  const ops: Prisma.PrismaPromise<unknown>[] = [];
+  if (input.tags) {
+    const tags = normalizeTags(input.tags);
+    for (const name of tags) {
+      ops.push(prisma.tag.upsert({ where: { name }, create: { name }, update: {} }));
     }
-    return tx.agent.update({ where: { slug }, data, include: includeRelations });
-  });
+    ops.push(prisma.agentTag.deleteMany({ where: { agentId: current.id } }));
+    if (tags.length > 0) {
+      ops.push(prisma.agentTag.createMany({ data: tags.map((tagName) => ({ agentId: current.id, tagName })) }));
+    }
+  }
+  ops.push(prisma.agent.update({ where: { slug }, data, include: includeRelations }));
+
+  const results = await prisma.$transaction(ops);
+  const agent = results[results.length - 1] as AgentWithRelations;
 
   return toOwnerView(agent);
 }

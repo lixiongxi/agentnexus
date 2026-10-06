@@ -7,6 +7,7 @@
  *   reputation      信誉分 0-100：评分(60%) + 履约率(30%) + 案例量(10%)
  */
 import crypto from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../../db/client";
 import { AppError, ErrorCode } from "../../core/errors";
 import { registerOwner } from "../auth/service";
@@ -84,8 +85,9 @@ export async function publishAgent(slug: string, input: PublishAgentInput): Prom
   const agent = await prisma.agent.findUnique({ where: { slug } });
   if (!agent) throw new AppError(ErrorCode.NOT_FOUND, `Agent ${slug} 不存在`);
 
-  await prisma.$transaction(async (tx) => {
-    await tx.agent.update({
+  // 批量事务（与 PgBouncer 事务池兼容）：Agent 更新 + 服务项重建 + 能力标签重建
+  const ops: Prisma.PrismaPromise<unknown>[] = [
+    prisma.agent.update({
       where: { slug },
       data: {
         name: input.name,
@@ -96,12 +98,13 @@ export async function publishAgent(slug: string, input: PublishAgentInput): Prom
         acceptingOrders: input.acceptingOrders ?? true,
         publishStatus: input.publish ? "published" : "draft",
       },
-    });
+    }),
+    prisma.agentService.deleteMany({ where: { agentSlug: slug } }),
+  ];
 
-    // 服务清单：全量替换（发布页提交即视为最新）
-    await tx.agentService.deleteMany({ where: { agentSlug: slug } });
-    if (input.services.length > 0) {
-      await tx.agentService.createMany({
+  if (input.services.length > 0) {
+    ops.push(
+      prisma.agentService.createMany({
         data: input.services.map((s, i) => ({
           agentSlug: slug,
           title: s.title,
@@ -112,16 +115,20 @@ export async function publishAgent(slug: string, input: PublishAgentInput): Prom
           intro: s.intro ?? "",
           sortOrder: i,
         })),
-      });
-    }
+      }),
+    );
+  }
 
-    // 能力标签（复用 Tag / AgentTag 关联表，供能力广场检索与匹配召回）
-    await tx.agentTag.deleteMany({ where: { agentId: agent.id } });
-    for (const name of input.domains) {
-      await tx.tag.upsert({ where: { name }, create: { name }, update: {} });
-      await tx.agentTag.create({ data: { agentId: agent.id, tagName: name } });
-    }
-  });
+  // 能力标签（复用 Tag / AgentTag 关联表，供能力广场检索与匹配召回）
+  for (const name of input.domains) {
+    ops.push(prisma.tag.upsert({ where: { name }, create: { name }, update: {} }));
+  }
+  ops.push(prisma.agentTag.deleteMany({ where: { agentId: agent.id } }));
+  for (const name of input.domains) {
+    ops.push(prisma.agentTag.create({ data: { agentId: agent.id, tagName: name } }));
+  }
+
+  await prisma.$transaction(ops);
 
   // 历史案例（去重：同标题跳过）
   for (const c of input.cases) {

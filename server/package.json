@@ -17,7 +17,12 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
     "test": "node scripts/run-tests.mjs",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:pg:sync": "node scripts/gen-pg-schema.mjs",
+    "db:pg:generate": "node scripts/gen-pg-schema.mjs && prisma generate --schema prisma/schema.pg.prisma",
+    "db:pg:push": "node scripts/gen-pg-schema.mjs && prisma db push --schema prisma/schema.pg.prisma",
+    "db:sqlite:generate": "prisma generate --schema prisma/schema.prisma",
+    "dev:pg": "npm run db:pg:generate && tsx src/index.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
