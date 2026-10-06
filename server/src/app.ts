@@ -15,15 +15,15 @@ import { registerAgentRoutes } from "./modules/agents/routes";
 import { registerConnectionRoutes } from "./modules/connections/routes";
 import { registerMessageRoutes } from "./modules/messages/routes";
 import { registerChatRoutes } from "./modules/chat/routes";
-import { registerAutopilotRoutes } from "./modules/autopilot/routes";
 import { registerAuthRoutes } from "./modules/auth/routes";
 import { registerAdminRoutes } from "./modules/admin/routes";
 import { registerRealtimeRoutes } from "./modules/realtime/routes";
-import { registerAssistantRoutes } from "./modules/assistants/routes";
-import { registerGroupRoutes } from "./modules/groups/routes";
 import { registerCardRoutes } from "./modules/card/routes";
 import { registerMomentRoutes } from "./modules/moments/routes";
 import { registerSystemRoutes } from "./modules/system/routes";
+/* ---------- 个人端（v4） ---------- */
+import { registerPersonalRoutes } from "./modules/personal/routes";
+import { registerMarketRoutes } from "./modules/market/routes";
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -77,18 +77,19 @@ export async function buildApp(): Promise<FastifyInstance> {
   registerSuccessSerializer(app);
   registerErrorHandlers(app);
 
-  /* ---------- 业务路由 ---------- */
+  /* ---------- 业务路由（个人端 v4） ----------
+   * 企业端模块（企业助理知识库 / 自主巡航 / 企业群协作）已下线：
+   * 路由不再挂载（功能彻底不可用），代码与数据表保留一个版本周期以便回滚。 */
   await registerSystemRoutes(app);
   await registerAuthRoutes(app);
   await registerAgentRoutes(app);
+  await registerPersonalRoutes(app);
+  await registerMarketRoutes(app);
   await registerConnectionRoutes(app);
   await registerMessageRoutes(app);
   await registerChatRoutes(app);
-  await registerAutopilotRoutes(app);
   await registerAdminRoutes(app);
   await registerRealtimeRoutes(app);
-  await registerAssistantRoutes(app);
-  await registerGroupRoutes(app);
   await registerCardRoutes(app);
   await registerMomentRoutes(app);
 

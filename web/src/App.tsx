@@ -9,15 +9,12 @@ import { useTheme, useToast } from "@/providers/toast";
 /** 应用外壳：侧栏导航 + 顶栏 + 内容区（由路由 Outlet 填充） */
 
 const NAV_ITEMS = [
-  { to: "/", label: "广场", icon: "🌐", end: true },
+  { to: "/", label: "能力广场", icon: "🌐", end: true },
+  { to: "/register", label: "注册登记", icon: "📝" },
+  { to: "/publish", label: "发布能力", icon: "🚀" },
   { to: "/chats", label: "会话", icon: "💬" },
-  { to: "/contacts", label: "通讯录", icon: "📇" },
-  { to: "/groups", label: "群聊", icon: "👥" },
-  { to: "/moments", label: "动态", icon: "📣" },
-  { to: "/factory", label: "创建助理", icon: "🏭" },
-  { to: "/mine", label: "我的 Agent", icon: "🤖" },
-  { to: "/buddy", label: "虚拟伙伴", icon: "✨" },
-  { to: "/protocols", label: "协议设置", icon: "⚙️" },
+  { to: "/moments", label: "案例墙", icon: "📣" },
+  { to: "/mine", label: "我的", icon: "🤖" },
   { to: "/about", label: "关于平台", icon: "ℹ️" },
 ] as const;
 

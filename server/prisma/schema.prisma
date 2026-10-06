@@ -25,15 +25,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// 主人：Agent 背后的人（可拥有多个 Agent）
+/// 主人：个人用户（个人端登记信息）
 model Owner {
   id           String   @id @default(cuid())
-  name         String
-  org          String
-  title        String?
-  email        String?  @unique // 注册邮箱唯一（PG 允许多个 NULL，演示账号不受影响）
-  passwordHash String? // 主人登录口令（scrypt 摘要）；未设置表示仅支持演示登录
-  role         String   @default("owner") // owner / admin
+  name         String // 昵称（个人端主字段）
+  org          String? // 已下线（企业端字段，保留兼容，个人端不采集）
+  title        String? // 已下线（企业端字段）
+  email        String?  @unique // 登记邮箱（唯一，支持登录与找回）
+  passwordHash String? // 登录口令（scrypt 摘要）
+  city         String   @default("") // 【个人端新增】所在城市
+  bio          String   @default("") // 【个人端新增】一句话自我介绍
+  domains      String   @default("[]") // 【个人端新增】擅长领域（JSON 数组）
+  role         String   @default("owner")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -83,6 +86,17 @@ model Agent {
   assistantProfile AssistantProfile?
   faqEntries       FaqEntry[]
   productEntries   ProductEntry[]
+
+  /* ---------- 个人端（v4）：能力声明与匹配统计 ---------- */
+  publishStatus    String  @default("draft") // draft（未发布）| published（已发布到能力广场）
+  serviceIntro     String  @default("") // 我能为他人提供什么（自然语言能力自述）
+  acceptingOrders  Boolean @default(true) // 是否接受新订单（停接单开关）
+  completedCases   Int     @default(0) // 已完成案例数（由 ServiceCase 汇总，匹配第一因子）
+  avgCaseRating    Float   @default(0) // 案例平均评分（0-5）
+  reputation       Float   @default(0) // 信誉分（0-100，评价与履约汇总）
+
+  services AgentService[]
+  cases    ServiceCase[]
   mcpServers       McpServer[]
 
   @@index([industry])
@@ -407,4 +421,100 @@ model LlmConfig {
   baseUrl   String   @default("https://api.openai.com/v1")
   model     String   @default("gpt-4o-mini")
   updatedAt DateTime @updatedAt
+}
+
+/* ============================================================
+ * 个人端（v4）：服务清单 / 案例 / 需求 / 订单 / 评价
+ * 匹配排序的核心数据：ServiceCase（已完成案例）权重最高
+ * ============================================================ */
+
+/// Agent 服务清单：我能提供的具体服务（替代企业端产品库）
+model AgentService {
+  id          String   @id @default(cuid())
+  agentSlug   String
+  agent       Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
+  title       String // 服务名称，如「品牌短视频制作」
+  tags        String   @default("[]") // 能力标签（JSON 数组，匹配主索引）
+  deliverable String   @default("") // 交付物，如「1 条 60s 成片」
+  priceRange  String   @default("") // 报价区间，如「800-2000 元」
+  cycleDays   Int      @default(3) // 交付周期（天）
+  intro       String   @default("") // 服务说明
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([agentSlug])
+}
+
+/// 已完成案例：匹配排序第一因子（做过同类 + 口碑好 → 优先推荐）
+model ServiceCase {
+  id          String   @id @default(cuid())
+  agentSlug   String
+  agent       Agent    @relation(fields: [agentSlug], references: [slug], onDelete: Cascade)
+  orderId     String? // 关联订单（平台内成交自动沉淀）；手动补充的历史案例为空
+  title       String
+  summary     String   @default("")
+  tags        String   @default("[]") // 案例能力标签（JSON 数组，用于「同类案例」判定）
+  rating      Int      @default(0) // 需求方评分 1-5
+  source      String   @default("platform") // platform（订单沉淀）| manual（用户补充）
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([agentSlug, completedAt])
+}
+
+/// 需求：需求方发布「我需要什么」
+model Demand {
+  id          String    @id @default(cuid())
+  ownerSlug   String // 发布需求的个人（其 Agent slug）
+  title       String
+  content     String // 需求详述（自然语言）
+  tags        String    @default("[]") // 所需能力标签（JSON 数组）
+  budget      String    @default("") // 预算区间
+  deadline    DateTime? // 期望交付时间
+  status      String    @default("open") // open | matched | closed
+  matchCount  Int       @default(0) // 已产生匹配数
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orders Order[]
+
+  @@index([status, createdAt])
+  @@index([ownerSlug])
+}
+
+/// 订单：撮合成交后的合作契约（状态机 active → delivered → done/cancelled）
+model Order {
+  id           String    @id @default(cuid())
+  orderCode    String    @unique // ODR-xxxxxx
+  demandId     String?
+  demand       Demand?   @relation(fields: [demandId], references: [id], onDelete: SetNull)
+  demanderSlug String // 需求方
+  providerSlug String // 供给方（个人 Agent）
+  title        String
+  amount       String    @default("") // 成交金额（自由文本）
+  status       String    @default("active") // active | delivered | done | cancelled
+  createdAt    DateTime  @default(now())
+  deliveredAt  DateTime?
+  completedAt  DateTime?
+
+  reviews Review[]
+
+  @@index([providerSlug, status])
+  @@index([demanderSlug, status])
+}
+
+/// 评价：订单完成后双方互评（双盲：全部提交或超时后公开）
+model Review {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromSlug  String
+  toSlug    String
+  score     Int // 1-5 星
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, fromSlug])
+  @@index([toSlug])
 }

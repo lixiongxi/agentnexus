@@ -648,3 +648,56 @@ button {
     background: #fff;
   }
 }
+
+/* ============ 个人端 v4：登记 / 发布能力页 ============ */
+
+/* 窄版页面容器（表单类页面） */
+.page-narrow {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--sp-4) var(--sp-8);
+}
+
+/* 标签选择器（注册登记 / 发布能力） */
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.tag-chip {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft, var(--ink));
+  border-radius: var(--r-pill, 999px);
+  padding: 7px 14px;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: all var(--dur-1, 0.15s) var(--ease, ease);
+}
+.tag-chip:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.tag-chip.on {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+/* 子卡片（服务项 / 案例项：内嵌于表单） */
+.sub-card {
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md, 12px);
+  padding: var(--sp-3, 12px);
+  margin-bottom: var(--sp-3, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+}
+.sub-card .input {
+  margin: 0;
+}

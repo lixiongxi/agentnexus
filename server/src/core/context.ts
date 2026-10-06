@@ -18,7 +18,7 @@ export interface OwnerContext {
   kind: "owner";
   ownerId: string;
   name: string;
-  org: string;
+  org: string | null; // 企业端字段（个人端不采集，可为空）
   email: string | null;
   title: string | null;
   role: string;

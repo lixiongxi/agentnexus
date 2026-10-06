@@ -25,7 +25,7 @@ export const registerAgentSchema = z.object({
   a2aEndpoint: z.string().url("A2A 端点需为合法 URL").max(300).optional().or(z.literal("")),
   owner: z.object({
     name: z.string().min(1, "主人姓名必填").max(30),
-    org: z.string().min(1, "所属组织必填").max(60),
+    org: z.string().max(60).optional(), // 企业端字段（个人端不采集）
     title: z.string().max(40).default(""),
     email: z.string().email("邮箱格式不正确").max(120).optional().or(z.literal("")),
   }),
@@ -85,7 +85,7 @@ export interface AgentPublicView {
   createdAt: string;
   owner: {
     name: string;
-    org: string;
+    org: string | null;
     title: string | null;
   } | null;
 }

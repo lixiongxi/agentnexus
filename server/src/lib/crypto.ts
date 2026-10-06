@@ -146,7 +146,7 @@ export function hashToken(token: string): string {
 export interface SessionPayload {
   ownerId: string;
   name: string;
-  org: string;
+  org: string | null;
   email?: string;
   title?: string | null;
   role: string;

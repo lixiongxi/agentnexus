@@ -19,7 +19,7 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 天
 function toView(owner: {
   id: string;
   name: string;
-  org: string;
+  org: string | null;
   title: string | null;
   email: string | null;
   role: string;
@@ -36,11 +36,16 @@ function toView(owner: {
 
 export async function registerOwner(input: {
   name: string;
-  org: string;
-  title: string;
+  /** 企业端字段（个人端不再采集，可选保留兼容） */
+  org?: string;
+  title?: string;
   email: string;
   password: string;
-}): Promise<AuthResult> {
+  /** 个人端新增字段 */
+  city?: string;
+  bio?: string;
+  domains?: string[];
+}): Promise<AuthResult & { profile: OwnerProfileView }> {
   const email = input.email.trim().toLowerCase();
   const existing = await prisma.owner.findFirst({ where: { email } });
   if (existing) throw new AppError(ErrorCode.CONFLICT, "该邮箱已注册");
@@ -49,14 +54,18 @@ export async function registerOwner(input: {
     const owner = await prisma.owner.create({
       data: {
         name: input.name,
-        org: input.org,
+        org: input.org ?? null,
         title: input.title || null,
         email,
         passwordHash: hashPassword(input.password),
+        city: input.city ?? "",
+        bio: input.bio ?? "",
+        domains: JSON.stringify(input.domains ?? []),
       },
     });
 
-    return issueSession(owner.id);
+    const session = await issueSession(owner.id);
+    return { ...session, profile: toOwnerProfile(owner) };
   } catch (err) {
     // 数据库级唯一约束兜底（并发注册同一邮箱时 findFirst 可能都查不到）
     if (typeof err === "object" && err !== null && (err as { code?: string }).code === "P2002") {
@@ -64,6 +73,42 @@ export async function registerOwner(input: {
     }
     throw err;
   }
+}
+
+/** Owner → 对外资料视图（个人端） */
+export function toOwnerProfile(owner: {
+  id: string;
+  name: string;
+  email: string | null;
+  city: string;
+  bio: string;
+  domains: string;
+  role: string;
+}): OwnerProfileView {
+  let domains: string[] = [];
+  try {
+    const v = JSON.parse(owner.domains) as unknown;
+    if (Array.isArray(v)) domains = v as string[];
+  } catch {
+    /* 忽略解析失败 */
+  }
+  return {
+    id: owner.id,
+    name: owner.name,
+    email: owner.email,
+    city: owner.city,
+    bio: owner.bio,
+    domains,
+  };
+}
+
+export interface OwnerProfileView {
+  id: string;
+  name: string;
+  email: string | null;
+  city: string;
+  bio: string;
+  domains: string[];
 }
 
 /**
@@ -79,7 +124,7 @@ async function issueSession(ownerId: string): Promise<AuthResult> {
     {
       ownerId: owner.id,
       name: owner.name,
-      org: owner.org,
+      org: owner.org ?? null,
       email: owner.email ?? undefined,
       title: owner.title,
       role: owner.role,
@@ -99,7 +144,7 @@ async function issueSession(ownerId: string): Promise<AuthResult> {
  */
 export async function registerWithAgent(input: {
   name: string;
-  org: string;
+  org: string | null;
   title: string;
   email: string;
   password: string;
@@ -112,7 +157,7 @@ export async function registerWithAgent(input: {
     tags?: string[];
   };
 }): Promise<AuthResult & { agent: unknown; secret: string | null }> {
-  const session = await registerOwner(input);
+  const session = await registerOwner({ ...input, org: input.org ?? undefined });
 
   if (!input.agent) {
     return { ...session, agent: null, secret: null };
@@ -137,7 +182,7 @@ export async function registerWithAgent(input: {
           tags: input.agent.tags ?? [],
           autoAccept: true,
           online: true,
-          owner: { name: input.name, org: input.org, title: input.title, email: input.email },
+          owner: { name: input.name, org: input.org ?? undefined, title: input.title, email: input.email },
         });
         return { ...session, agent: reg.agent, secret: reg.secret };
       } catch (err) {

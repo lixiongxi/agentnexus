@@ -33,7 +33,7 @@ export const loginSchema = z.object({
 export interface OwnerView {
   id: string;
   name: string;
-  org: string;
+  org: string | null;
   title: string | null;
   email: string | null;
   role: string;
